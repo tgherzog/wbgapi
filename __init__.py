@@ -49,15 +49,16 @@ def fetch(url,params={}):
     while totalRecords is None or recordsRead < totalRecords:
 
         url_ = '{}?{}'.format(url, urllib.urlencode(params_))
-        result = _queryAPI(url_)
+        (hdr,result) = _queryAPI(url_)
 
         if totalRecords is None:
-            totalRecords = int(result[0]['total'])
+            totalRecords = int(hdr['total'])
 
-        for elem in result[1]:
+        data = _responseObjects(url_, result)
+        for elem in data:
             yield elem
 
-        recordsRead += int(result[0]['per_page'])
+        recordsRead += int(hdr['per_page'])
         params_['page'] += 1
 
 def get(url,params={}):
@@ -81,27 +82,57 @@ def get(url,params={}):
     params_['per_page'] = 1
 
     url_ = url + '?' + urllib.urlencode(params_)
-    result = _queryAPI(url_)
-    return result[1][0]
+    (hdr,result) = _queryAPI(url_)
+    data = _responseObjects(url_, result)
+    return data[0] if len(data) > 0 else None
 
+
+def _responseHeader(url, result):
+    '''Internal function to return the response header, which contains page information
+    '''
+
+    if type(result) is list and len(result) > 0 and type(result[0]) is dict:
+        # looks like the v2 data API
+        return result[0]
+
+    if type(result) is dict:
+        # looks like the new beta advanced API
+        return result
+
+    raise APIError(url, 'Unrecognized response object format')
+
+def _responseObjects(url, result):
+    '''Internal function that returns an array of objects
+    '''
+
+    if type(result) is list and len(result) > 1:
+        # looks like the v2 data API
+        return result[1]
+
+    if type(result) is dict and result.get('source'):
+        if type(result['source']) is list:
+            return result['source'][0]['concept'][0]['variable']
+
+        if type(result['source']) is dict:
+            return result['source']['data']
+
+    raise APIError(url, 'Unrecognized response object format')
 
 def _queryAPI(url):
     '''Internal function for calling the API with sanity checks
     '''
     response = requests.get(url)
     if response.status_code != 200:
-        raise wbgapi.APIError(url, response.reason, response.status_code)
+        raise APIError(url, response.reason, response.status_code)
 
     try:
         result = response.json()
     except:
-        raise wbgapi.APIError(url, 'JSON decoding error')
+        raise APIError(url, 'JSON decoding error')
 
-    if len(result) < 2:
-        if result[0].get('message'):
-            msg = result[0]['message'][0]
-            raise wbgapi.APIError(url, '{}: {}'.format(msg['key'], msg['value']))
-        else:
-            raise wbgapi.APIError(url, 'Unrecognized JSON response')
+    hdr = _responseHeader(url, result)
+    if hdr.get('message'):
+        msg = hdr['message'][0]
+        raise APIError(url, '{}: {}'.format(msg['key'], msg['value']))
 
-    return result
+    return (hdr, result)
