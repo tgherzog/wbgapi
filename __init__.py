@@ -8,6 +8,14 @@ well as perhaps compensate for some of its flaws.
 
 import urllib
 import requests
+import series
+
+# defaults
+endpoint = 'https://api.worldbank.org/v2'
+lang = 'en'
+db = 2
+
+_aggs = None
 
 class APIError(Exception):
   def __init__(self,url,msg,code=None):
@@ -87,6 +95,23 @@ def get(url,params={}):
     return data[0] if len(data) > 0 else None
 
 
+def agg_list():
+
+    global _aggs, endpoint
+
+    if type(_aggs) is set:
+        return _aggs
+
+    url = '{}/country/all'.format(endpoint)
+    _aggs = set()
+    for row in fetch(url):
+        if row['region']['id'] == 'NA':
+            _aggs.add(row['id'])
+            _aggs.add(row['iso2Code'])
+
+    return _aggs
+        
+
 def _responseHeader(url, result):
     '''Internal function to return the response header, which contains page information
     '''
@@ -136,3 +161,16 @@ def _queryAPI(url):
         raise APIError(url, '{}: {}'.format(msg['key'], msg['value']))
 
     return (hdr, result)
+
+def _apiParam(arg):
+    ''' convert an API parameter to a semicolon-delimited string
+    '''
+
+    if type(arg) is str and len(arg) > 0:
+        return arg
+
+    if type(arg) is list:
+        return ';'.join(arg)
+
+    return None
+
