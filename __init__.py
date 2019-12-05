@@ -1,14 +1,11 @@
 
 '''This module provides a very rudimentary interface to the World Bank's data API.
-
-Currently only low-level functionality is defined, but the aspiration is this
-will improve over time to take advantage of the latest API functionality, as
-well as perhaps compensate for some of its flaws.
 '''
 
 import urllib
 import requests
 import series
+import source
 
 # defaults
 endpoint = 'https://api.worldbank.org/v2'
@@ -94,7 +91,6 @@ def get(url,params={}):
     data = _responseObjects(url_, result)
     return data[0] if len(data) > 0 else None
 
-
 def agg_list():
 
     global _aggs, endpoint
@@ -110,7 +106,6 @@ def agg_list():
             _aggs.add(row['iso2Code'])
 
     return _aggs
-        
 
 def _responseHeader(url, result):
     '''Internal function to return the response header, which contains page information
@@ -136,9 +131,15 @@ def _responseObjects(url, result):
 
     if type(result) is dict and result.get('source'):
         if type(result['source']) is list:
-            return result['source'][0]['concept'][0]['variable']
+            if type(result['source'][0]['concept'][0].get('variable')) is list:
+                # this format is used for lists of concepts as well as metadata in the beta endpoints
+                return result['source'][0]['concept'][0]['variable']
+            else:
+                # this format is used to list concepts in the beta endpoints
+                return result['source'][0]['concept']
 
         if type(result['source']) is dict:
+            # this format is used to return data in the beta endpoints
             return result['source']['data']
 
     raise APIError(url, 'Unrecognized response object format')
