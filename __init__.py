@@ -11,6 +11,7 @@ import source
 endpoint = 'https://api.worldbank.org/v2'
 lang = 'en'
 db = 2
+economy_key = 'economy' # used to map a database's economy dimension to a standard constant
 
 _aggs = None
 

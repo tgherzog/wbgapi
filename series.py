@@ -61,7 +61,7 @@ def get(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
     if skipAggs:
         aggs = w.agg_list()
 
-    economy_dimension_label = _economyDimension()
+    economy_dimension_label = _economyDimension(w.db)
     url = '{}/{}/sources/{}/series/{}/{}/{}/time/{}'.format(w.endpoint, w.lang, w.db, w._apiParam(series), economy_dimension_label, w._apiParam(countries), w._apiParam(time))
     for row in w.fetch(url, params):
         if skipBlanks and row['value'] is None:
@@ -72,9 +72,11 @@ def get(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         x = {'value': row['value']}
         for elem in row['variable']:
             key = elem['concept'].lower()
-            if key == "country" and skipAggs and elem['id'] in aggs:
-                skip = True
-                break
+            if key == economy_dimension_label:
+                key = w.economy_key
+                if skipAggs and elem['id'] in aggs:
+                    skip = True
+                    break
 
             if labels:
                 del(elem['concept'])
@@ -85,19 +87,19 @@ def get(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         if not skip:
             yield x
 
-def _economyDimension():
+def _economyDimension(db):
     '''Helper function to discern the API name of the economy dimension. This varies by database
     '''
 
     global _economyDimensions
 
-    t = _economyDimensions.get(w.db)
+    t = _economyDimensions.get(db)
     if t is None:
-        concepts = w.source.concepts(w.db).keys()
+        concepts = w.source.concepts(db).keys()
         for elem in ['country', 'economy', 'admin%20region', 'states', 'provinces']:
             if elem in concepts:
                 t = elem
-                _economyDimensions[w.db] = t
+                _economyDimensions[db] = t
                 break
 
     return t

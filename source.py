@@ -19,7 +19,7 @@ def list():
 
     url = '{}/{}/sources'.format(w.endpoint, w.lang)
 
-    return w.fetch(url)
+    return w.fetch(url, {'databid': 'y'})
 
 def get(db=None):
     '''Retrieve the record for the specified database
