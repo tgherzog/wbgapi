@@ -1,8 +1,6 @@
 
 import wbgapi as w
 
-_economyDimensions = {}
-
 def list():
     '''Iterate over the list of indicators/series in the current database
 
@@ -11,7 +9,7 @@ def list():
 
     Example:
         for elem in wbgapi.series.list():
-            print elem['id'], elem['name']
+            print(elem['id'], elem['value'])
 
     '''
     return w.source.features('series')
@@ -61,7 +59,7 @@ def get(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
     if skipAggs:
         aggs = w.agg_list()
 
-    economy_dimension_label = _economyDimension(w.db)
+    economy_dimension_label = w.economy.dimension_name()
     url = '{}/{}/sources/{}/series/{}/{}/{}/time/{}'.format(w.endpoint, w.lang, w.db, w._apiParam(series), economy_dimension_label, w._apiParam(countries), w._apiParam(time))
     for row in w.fetch(url, params):
         if skipBlanks and row['value'] is None:
@@ -87,19 +85,3 @@ def get(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         if not skip:
             yield x
 
-def _economyDimension(db):
-    '''Helper function to discern the API name of the economy dimension. This varies by database
-    '''
-
-    global _economyDimensions
-
-    t = _economyDimensions.get(db)
-    if t is None:
-        concepts = w.source.concepts(db).keys()
-        for elem in ['country', 'economy', 'admin%20region', 'states', 'provinces']:
-            if elem in concepts:
-                t = elem
-                _economyDimensions[db] = t
-                break
-
-    return t

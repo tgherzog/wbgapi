@@ -2,10 +2,12 @@
 '''This module provides a very rudimentary interface to the World Bank's data API.
 '''
 
-import urllib
+import urllib.parse
 import requests
-import series
-import source
+from . import series
+from . import source
+from . import economy
+from . import time
 
 # defaults
 endpoint = 'https://api.worldbank.org/v2'
@@ -54,7 +56,7 @@ def fetch(url,params={}):
     recordsRead = 0
     while totalRecords is None or recordsRead < totalRecords:
 
-        url_ = '{}?{}'.format(url, urllib.urlencode(params_))
+        url_ = '{}?{}'.format(url, urllib.parse.urlencode(params_))
         (hdr,result) = _queryAPI(url_)
 
         if totalRecords is None:
@@ -87,7 +89,7 @@ def get(url,params={}):
     params_['format'] = 'json'
     params_['per_page'] = 1
 
-    url_ = url + '?' + urllib.urlencode(params_)
+    url_ = url + '?' + urllib.parse.urlencode(params_)
     (hdr,result) = _queryAPI(url_)
     data = _responseObjects(url_, result)
     return data[0] if len(data) > 0 else None

@@ -1,6 +1,6 @@
 
 import wbgapi as w
-import urllib
+import urllib.parse
 
 
 # concepts cached per database
@@ -72,7 +72,7 @@ def concepts(db=None):
     url = '{}/{}/sources/{}/concepts'.format(w.endpoint, w.lang, db)
     c = {}
     for row in w.fetch(url):
-        key = urllib.quote(row['id']).lower()
+        key = urllib.parse.quote(row['id']).lower()
         c[key] = row['value']
 
     _concepts[db] = c
