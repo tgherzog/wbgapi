@@ -166,15 +166,15 @@ def _queryAPI(url):
 
     return (hdr, result)
 
-def _apiParam(arg):
+def queryParam(arg):
     ''' convert an API parameter to a semicolon-delimited string
     '''
 
-    if type(arg) is str and len(arg) > 0:
-        return arg
+    if type(arg) is str or type(arg) is int:
+        return str(arg)
 
     if type(arg) is list:
-        return ';'.join(arg)
+        return ';'.join(map(lambda x:str(x), arg))
 
     return None
 

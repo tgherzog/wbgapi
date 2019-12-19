@@ -6,7 +6,7 @@ import urllib.parse
 # concepts cached per database
 _concepts = {}
 
-def list():
+def list(id=''):
     '''Iterate of list of databases
 
     Returns:
@@ -17,7 +17,7 @@ def list():
             print elem['id'], elem['name'], elem['lastupdated']
     '''
 
-    url = '{}/{}/sources'.format(w.endpoint, w.lang)
+    url = '{}/{}/sources/{}'.format(w.endpoint, w.lang, w.queryParam(id))
 
     return w.fetch(url, {'databid': 'y'})
 

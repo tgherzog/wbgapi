@@ -14,7 +14,7 @@ def list():
     '''
     return w.source.features('series')
 
-def get(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False):
+def get(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}):
     '''Retrieve API data for the current database
     Parameters:
         series: (required) the series identifier, e.g., SP.POP.TOTL
@@ -50,18 +50,19 @@ def get(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         
     '''
 
-    params = {}
+    params_ = {}
+    params_.update(params)
     if mrv:
-        params['mrv'] = mrv
+        params_['mrv'] = mrv
     elif mrnev:
-        params['mrnev'] = mrnev
+        params_['mrnev'] = mrnev
 
     if skipAggs:
         aggs = w.agg_list()
 
     economy_dimension_label = w.economy.dimension_name()
-    url = '{}/{}/sources/{}/series/{}/{}/{}/time/{}'.format(w.endpoint, w.lang, w.db, w._apiParam(series), economy_dimension_label, w._apiParam(countries), w._apiParam(time))
-    for row in w.fetch(url, params):
+    url = '{}/{}/sources/{}/series/{}/{}/{}/time/{}'.format(w.endpoint, w.lang, w.db, w.queryParam(series), economy_dimension_label, w.queryParam(countries), w.queryParam(time))
+    for row in w.fetch(url, params_):
         if skipBlanks and row['value'] is None:
             continue
 
