@@ -6,8 +6,11 @@ import urllib.parse
 # concepts cached per database
 _concepts = {}
 
-def list(id=''):
+def list(id='all'):
     '''Iterate of list of databases
+
+    Parameters:
+        id:     the database ID to return
 
     Returns:
         a generator object
@@ -17,12 +20,10 @@ def list(id=''):
             print elem['id'], elem['name'], elem['lastupdated']
     '''
 
-    url = '{}/{}/sources/{}'.format(w.endpoint, w.lang, w.queryParam(id))
-
-    return w.fetch(url, {'databid': 'y'})
+    return w.fetch(_sourceurl(w.queryParam(id)), {'databid': 'y'})
 
 def get(db=None):
-    '''Retrieve the record for the specified database
+    '''Retrieve the record for a single database
 
     Parameters:
         db:      the database ID (e.g., 2=WDI). Default to the global db
@@ -34,11 +35,7 @@ def get(db=None):
         print wbgapi.source.get(2)['name']
     '''
 
-    if db is None:
-        db = w.wb
-
-    url = '{}/{}/sources/{}'.format(w.endpoint, w.lang, db)
-    return w.get(url)
+    return w.get(_sourceurl(db), {'databid': 'y'})
 
 def concepts(db=None):
     '''Retrieve the concepts for the specified database
@@ -78,11 +75,12 @@ def concepts(db=None):
     _concepts[db] = c
     return c
 
-def features(concept, db=None):
+def features(concept, id='all', db=None):
     '''Retrieve features for the specified database
 
     Parameters:
         concept:    the concept to retrieve (e.g., 'series')
+        id:         object identifiers to retrieve
         db:         the database to access (e.g., 2=WDI). Default uses the current database
 
     Returns:
@@ -93,6 +91,38 @@ def features(concept, db=None):
             print elem['id'], elem['value']
     '''
 
+    return w.fetch(_concepturl(concept, w.queryParam(id), db))
+
+def feature(concept, id, db=None):
+    '''Retrieve a single feature for the specified database
+
+    Parameters:
+        concept:    the concept to retrieve (e.g., 'series')
+        id:         the object ID
+        db:         the database to access (e.g., 2=WDI). Default uses the current database
+
+    Returns:
+        a database object
+
+    Example:
+        print(wbgapi.source.feature('series', 'SP.POP.TOTL')['value'])
+    '''
+
+    return w.get(_concepturl(concept, id, db))
+
+def _sourceurl(db):
+    '''Return the URL for fetching source objects
+    '''
+
+    if db is None:
+        db = w.db
+
+    return '{}/{}/sources/{}'.format(w.endpoint, w.lang, db)
+
+def _concepturl(concept, id, db):
+    '''Return the URL for fetching source objects
+    '''
+
     if db is None:
         db = w.db
 
@@ -100,6 +130,5 @@ def features(concept, db=None):
     if concept_list.get(concept) is None:
         return None
 
-    url = '{}/{}/sources/{}/{}'.format(w.endpoint, w.lang, db, concept)
-    return w.fetch(url)
+    return '{}/{}/sources/{}/{}/{}'.format(w.endpoint, w.lang, db, concept, id)
 

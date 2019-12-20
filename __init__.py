@@ -8,6 +8,7 @@ from . import series
 from . import source
 from . import economy
 from . import time
+from . import data
 
 # defaults
 endpoint = 'https://api.worldbank.org/v2'
