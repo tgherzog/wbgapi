@@ -3,6 +3,7 @@ import wbgapi as w
 import builtins
 
 _dimensions = {}
+_aggs = None
 
 def list(id='all'):
     '''Iterate over the list of time elements in the current database
@@ -52,3 +53,22 @@ def dimension_name(db=None):
                 break
 
     return t
+
+def aggregates():
+    '''Returns a set object with both the 2-character and 3-character codes
+    of aggregate economies. These are obtained from the API upon first call
+    '''
+
+    global _aggs
+
+    if type(_aggs) is set:
+        return _aggs
+
+    url = '{}/country/all'.format(w.endpoint)
+    _aggs = set()
+    for row in w.fetch(url):
+        if row['region']['id'] == 'NA':
+            _aggs.add(row['id'])
+            _aggs.add(row['iso2Code'])
+
+    return _aggs

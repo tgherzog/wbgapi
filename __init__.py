@@ -16,8 +16,6 @@ lang = 'en'
 db = 2
 economy_key = 'economy' # used to map a database's economy dimension to a standard constant
 
-_aggs = None
-
 class APIError(Exception):
   def __init__(self,url,msg,code=None):
     self.msg  = msg
@@ -95,21 +93,6 @@ def get(url,params={}):
     data = _responseObjects(url_, result)
     return data[0] if len(data) > 0 else None
 
-def agg_list():
-
-    global _aggs, endpoint
-
-    if type(_aggs) is set:
-        return _aggs
-
-    url = '{}/country/all'.format(endpoint)
-    _aggs = set()
-    for row in fetch(url):
-        if row['region']['id'] == 'NA':
-            _aggs.add(row['id'])
-            _aggs.add(row['iso2Code'])
-
-    return _aggs
 
 def _responseHeader(url, result):
     '''Internal function to return the response header, which contains page information
