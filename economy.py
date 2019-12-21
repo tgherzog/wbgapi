@@ -16,7 +16,12 @@ def list(id='all'):
             print(elem['id'], elem[' value'])
 
     '''
-    return w.source.features(dimension_name(), id)
+    aggs = aggregates()
+    for row in w.source.features(dimension_name(), w.queryParam(id)):
+        row['aggregate'] = row['id'] in aggs
+        yield row
+        
+    # return w.source.features(dimension_name(), id)
 
 def get(id):
     '''Retrieve the specified economy
@@ -31,7 +36,10 @@ def get(id):
         print(wbgapi.economy.get('BRA')['value'])
     '''
 
-    return w.source.feature(dimension_name(), id)
+    aggs = aggregates()
+    row = w.source.feature(dimension_name(), id)
+    row['aggregate'] = row['id'] in aggs
+    return row
 
     
 def dimension_name(db=None):
