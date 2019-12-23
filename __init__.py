@@ -29,6 +29,14 @@ class APIError(Exception):
     return 'APIError: {} ({})'.format(self.msg, self.url)
 
 
+class Metadata():
+    def __init__(self,concept,id):
+        self.concept = concept
+        self.id = id
+        self.metadata = {}
+
+
+
 def fetch(url,params={},concepts=False):
     '''Iterate over an API response with automatic paging
 
@@ -93,6 +101,51 @@ def get(url,params={},concepts=False):
     data = _responseObjects(url_, result, wantConcepts=concepts)
     return data[0] if len(data) > 0 else None
 
+
+def metadata(url,params={},concepts='all'):
+    '''Return metadata records
+
+    Parameters:
+        url:        Full url to pass to fetch (minus the query string)
+
+        params:     Optional query parameters
+
+        concepts:   Name or array of the concepts to return: 'all' for all concepts
+
+    Returns:
+        A generator that returns Metadata objects
+    '''
+
+    if concepts == 'all':
+        concepts = None
+    elif type(concepts) is str:
+        concepts = [concepts]
+
+    def metafield(concept):
+        '''Subroutine for returning individual metadata elements
+        '''
+
+        for var in concept['variable']:
+            id = var['id']
+            for field in var['metatype']:
+                yield (concept['id'], var['id'], field)
+    
+    m = Metadata(None,None)
+    for row in fetch(url,params,concepts=True):
+        if concepts and row['id'] not in concepts:
+            continue
+
+        for (concept_name,variable_id,field) in metafield(row):
+            if concept_name != m.concept or variable_id != m.id:
+                if m.concept:
+                    yield m
+
+                m = Metadata(concept_name, variable_id)
+            
+            m.metadata[field['id']] = field['value']
+
+    if m.concept:
+        yield m
 
 def _responseHeader(url, result):
     '''Internal function to return the response header, which contains page information

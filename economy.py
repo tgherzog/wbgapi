@@ -1,5 +1,6 @@
 
 import wbgapi as w
+from . import economy_metadata as metadata
 import builtins
 
 _dimensions = {}

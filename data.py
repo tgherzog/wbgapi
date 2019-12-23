@@ -75,6 +75,15 @@ def get(series, countries, time='all', mrv=None, mrnev=None, labels=False):
     for row in fetch(series, countries, time, mrv=mrv, mrnev=mrnev, labels=labels, params={'per_page': 1}):
         return row
 
+def footnote(series, country, time):
+
+    url = '{}/{}/sources/{}/footnote/{}~{}~{}/metadata'.format(w.endpoint, w.lang, w.db, country, series, time)
+    try:
+        for row in w.metadata(url):
+            return row.metadata['FootNote']
+    except:
+        raise
+
 
 def _request(series, countries='all', time='all', mrv=None, mrnev=None, params={}):
     '''Return the URL and parameters for data requests

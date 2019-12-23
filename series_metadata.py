@@ -1,37 +1,7 @@
 
 import wbgapi as w
-from . import series_metadata as metadata
 
-def list(id='all'):
-    '''Iterate over the list of indicators/series in the current database
-
-    Returns:
-        a generator object
-
-    Example:
-        for elem in wbgapi.series.list():
-            print(elem['id'], elem['value'])
-
-    '''
-    return w.source.features('series', w.queryParam(id))
-
-def get(id):
-    '''Get a single indicator object
-
-    Parameters:
-        id:     The object ID
-
-    Returns:
-        A database object
-
-    Example:
-        print(wbgapi.series.get('SP.POP.TOTL')['value'])
-    '''
-
-    return w.source.feature('series', id)
-
-
-def metadata_fetch(id,countries=[],time=[]):
+def fetch(id,countries=[],time=[]):
     '''Return metadata for specified series
 
     Arguments:
@@ -62,12 +32,13 @@ def metadata_fetch(id,countries=[],time=[]):
                 n += pg_size
                 url2 = '{}/{}/sources/{}/Country-Series/{}/metadata'.format(w.endpoint, w.lang, w.db, cs)
 
+                # requests for non-existing data throw malformed responses so we must catch for them
                 try:
                     for row2 in w.metadata(url2):
                         # w.metadata should be returning single entry dictionaries here since it pages for each new identifier
                         row.countries[row2.id.split('~')[0]] = row2.metadata['Country-Series']
                 except:
-                    raise
+                    pass
 
         if time:
             row.time = {}
@@ -86,7 +57,7 @@ def metadata_fetch(id,countries=[],time=[]):
         yield row
 
 
-def metadata_get(id,countries=[],time=[]):
+def get(id,countries=[],time=[]):
     
-    for row in metadata_fetch(id, countries, time):
+    for row in fetch(id, countries, time):
         return row
