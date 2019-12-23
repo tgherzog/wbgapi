@@ -68,7 +68,7 @@ def concepts(db=None):
 
     url = '{}/{}/sources/{}/concepts'.format(w.endpoint, w.lang, db)
     c = {}
-    for row in w.fetch(url):
+    for row in w.fetch(url, concepts=True):
         key = urllib.parse.quote(row['id']).lower()
         c[key] = row['value']
 

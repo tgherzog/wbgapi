@@ -29,7 +29,7 @@ class APIError(Exception):
     return 'APIError: {} ({})'.format(self.msg, self.url)
 
 
-def fetch(url,params={}):
+def fetch(url,params={},concepts=False):
     '''Iterate over an API response with automatic paging
 
     Parameters:
@@ -61,14 +61,14 @@ def fetch(url,params={}):
         if totalRecords is None:
             totalRecords = int(hdr['total'])
 
-        data = _responseObjects(url_, result)
+        data = _responseObjects(url_, result, wantConcepts=concepts)
         for elem in data:
             yield elem
 
         recordsRead += int(hdr['per_page'])
         params_['page'] += 1
 
-def get(url,params={}):
+def get(url,params={},concepts=False):
     '''Return a single response from the API
 
     Parameters:
@@ -90,7 +90,7 @@ def get(url,params={}):
 
     url_ = url + '?' + urllib.parse.urlencode(params_)
     (hdr,result) = _queryAPI(url_)
-    data = _responseObjects(url_, result)
+    data = _responseObjects(url_, result, wantConcepts=concepts)
     return data[0] if len(data) > 0 else None
 
 
@@ -108,7 +108,7 @@ def _responseHeader(url, result):
 
     raise APIError(url, 'Unrecognized response object format')
 
-def _responseObjects(url, result):
+def _responseObjects(url, result, wantConcepts=False):
     '''Internal function that returns an array of objects
     '''
 
@@ -117,13 +117,13 @@ def _responseObjects(url, result):
         return result[1]
 
     if type(result) is dict and result.get('source'):
-        if type(result['source']) is list:
-            if type(result['source'][0]['concept'][0].get('variable')) is list:
-                # this format is used for lists of concepts as well as metadata in the beta endpoints
-                return result['source'][0]['concept'][0]['variable']
-            else:
-                # this format is used to list concepts in the beta endpoints
+        if type(result['source']) is list and len(result['source']) > 0 and type(result['source'][0]) is dict:
+            # this format is used for metadata and concept lists. Caller may need an array of concepts or
+            # an array of the variables of the first concept
+            if wantConcepts:
                 return result['source'][0]['concept']
+            else:
+                return result['source'][0]['concept'][0]['variable']
 
         if type(result['source']) is dict:
             # this format is used to return data in the beta endpoints
