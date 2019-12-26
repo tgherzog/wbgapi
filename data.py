@@ -1,5 +1,9 @@
 
 import wbgapi as w
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}):
     '''Retrieve API data for the current database
@@ -68,6 +72,39 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
 
         if not skip:
             yield x
+
+def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}):
+
+    if pd is None:
+        raise ModuleNotFoundError('you must install pandas to use this feature')
+
+    if type(axes) is str and axes == 'auto':
+        axes = ['economy', 'series', 'time']
+        if mrv == 1 or mrnev == 1 or (time != 'all' and len(w.queryParam(time).split(';')) == 1):
+            axes.remove('time')
+        elif len(w.queryParam(series).split(';')) == 1:
+            axes.remove('series')
+        elif economy != 'all' and len(w.queryParam(economy).split(';')) == 1:
+            axes.remove('economy')
+        else:
+            del(axes[2])
+
+    t = set(axes)
+    if len(t) != 2 or t - set(['economy', 'series', 'time']):
+        raise ValueError('axes must be \'auto\' or exactly 2 of economy, series, time')
+
+    # for now let's see if it works to build the dataframe dynamically
+    df = pd.DataFrame()
+    key = 'value' if labels else 'id'
+
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, params=params):
+        df.loc[row[axes[0]][key], row[axes[1]][key]] = row['value']
+        
+    df.sort_index(axis=0,inplace=True)
+    df.sort_index(axis=1,inplace=True)
+    return df
+        
+        
 
 def get(series, economy, time='all', mrv=None, mrnev=None, labels=False):
 
