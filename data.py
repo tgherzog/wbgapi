@@ -1,16 +1,16 @@
 
 import wbgapi as w
 
-def fetch(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}):
+def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}):
     '''Retrieve API data for the current database
     Parameters:
         series: (required) the series identifier, e.g., SP.POP.TOTL
 
-        countries: country code to select. default=all
+        economy: country code to select. default=all
 
         time: time period to select. default=all
 
-        mrv:  return only the specified number of most recent values (same time period for all countries)
+        mrv:  return only the specified number of most recent values (same time period for all economies)
 
         mrnev: return only the specified number of non-empty most recent values (time period varies per country)
 
@@ -21,26 +21,25 @@ def fetch(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=
         skipAggs:    set to True to skip aggregates (return only countries)
 
     Notes:
-        series, countries and time can be either scalar strings ('SP.POP.TOTL', 'BRA')
+        series, economy and time can be either scalar strings ('SP.POP.TOTL', 'BRA')
         or arrays (['SP.POP.TOTL', 'NY.GDP.PCAP.CD'], ['BRA', 'ARG'])
 
     Returns:
         A generator object
 
     Examples:
-        # print name and population of all countries
+        # print name and population of all economies
         for elem in wbgapi.data.fetch('SP.POP.TOTL',labels=True):
-            print elem['country']['value'], elem['time']['value'], elem['value']
+            print elem['economy']['value'], elem['time']['value'], elem['value']
 
-        # dict of most recent population data for countries over 100000
-        popData = {elem['country']: elem['value'] for elem in wbgapi.data.fetch('SP.POP.TOTL', mrnev=1, skipAggs=True) if elem['value'] > 100000}
+        # dict of most recent population data for economies over 100000
+        popData = {elem['economy']: elem['value'] for elem in wbgapi.data.fetch('SP.POP.TOTL', mrnev=1, skipAggs=True) if elem['value'] > 100000}
         
     '''
 
-    (url, params_, economy_dimension_label) = _request(series, countries, time, mrv, mrnev, params)
+    (url, params_, economy_dimension_label) = _request(series, economy, time, mrv, mrnev, params)
     aggs = w.economy.aggregates()
 
-    url = '{}/{}/sources/{}/series/{}/{}/{}/time/{}'.format(w.endpoint, w.lang, w.db, w.queryParam(series), economy_dimension_label, w.queryParam(countries), w.queryParam(time))
     for row in w.fetch(url, params_):
         if skipBlanks and row['value'] is None:
             continue
@@ -70,14 +69,14 @@ def fetch(series, countries='all', time='all', mrv=None, mrnev=None, skipBlanks=
         if not skip:
             yield x
 
-def get(series, countries, time='all', mrv=None, mrnev=None, labels=False):
+def get(series, economy, time='all', mrv=None, mrnev=None, labels=False):
 
-    for row in fetch(series, countries, time, mrv=mrv, mrnev=mrnev, labels=labels, params={'per_page': 1}):
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, labels=labels, params={'per_page': 1}):
         return row
 
-def footnote(series, country, time):
+def footnote(series, economy, time):
 
-    url = '{}/{}/sources/{}/footnote/{}~{}~{}/metadata'.format(w.endpoint, w.lang, w.db, country, series, time)
+    url = '{}/{}/sources/{}/footnote/{}~{}~{}/metadata'.format(w.endpoint, w.lang, w.db, economy, series, time)
     try:
         for row in w.metadata(url):
             return row.metadata['FootNote']
@@ -85,7 +84,7 @@ def footnote(series, country, time):
         raise
 
 
-def _request(series, countries='all', time='all', mrv=None, mrnev=None, params={}):
+def _request(series, economy='all', time='all', mrv=None, mrnev=None, params={}):
     '''Return the URL and parameters for data requests
     '''
 
@@ -97,5 +96,5 @@ def _request(series, countries='all', time='all', mrv=None, mrnev=None, params={
         params_['mrnev'] = mrnev
 
     economy_dimension_label = w.economy.dimension_name()
-    url = '{}/{}/sources/{}/series/{}/{}/{}/time/{}'.format(w.endpoint, w.lang, w.db, w.queryParam(series), economy_dimension_label, w.queryParam(countries), w.queryParam(time))
+    url = '{}/{}/sources/{}/series/{}/{}/{}/time/{}'.format(w.endpoint, w.lang, w.db, w.queryParam(series), economy_dimension_label, w.queryParam(economy), w.queryParam(time))
     return (url, params_, economy_dimension_label)
