@@ -80,7 +80,7 @@ def features(concept, id='all', db=None):
 
     Parameters:
         concept:    the concept to retrieve (e.g., 'series')
-        id:         object identifiers to retrieve
+        id:         object identifiers to retrieve; must be a well-formed string
         db:         the database to access (e.g., 2=WDI). Default uses the current database
 
     Returns:
@@ -91,7 +91,7 @@ def features(concept, id='all', db=None):
             print elem['id'], elem['value']
     '''
 
-    return w.fetch(_concepturl(concept, w.queryParam(id), db))
+    return w.fetch(_concepturl(concept, id, db))
 
 def feature(concept, id, db=None):
     '''Retrieve a single feature for the specified database

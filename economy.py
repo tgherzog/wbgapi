@@ -18,11 +18,9 @@ def list(id='all'):
 
     '''
     aggs = aggregates()
-    for row in w.source.features(dimension_name(), w.queryParam(id)):
+    for row in w.source.features(dimension_name(), queryParam(id)):
         row['aggregate'] = row['id'] in aggs
         yield row
-        
-    # return w.source.features(dimension_name(), id)
 
 def get(id):
     '''Retrieve the specified economy
@@ -62,6 +60,12 @@ def dimension_name(db=None):
                 break
 
     return t
+
+def queryParam(arg):
+    '''Prepare parameters for an API query
+    '''
+
+    return w.queryParam(arg)
 
 def aggregates():
     '''Returns a set object with both the 2-character and 3-character codes

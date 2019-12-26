@@ -5,7 +5,7 @@ try:
 except ImportError:
     pd = None
 
-def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}):
+def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, params={}):
     '''Retrieve API data for the current database
     Parameters:
         series: (required) the series identifier, e.g., SP.POP.TOTL
@@ -41,7 +41,7 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         
     '''
 
-    (url, params_, economy_dimension_label) = _request(series, economy, time, mrv, mrnev, params)
+    (url, params_, economy_dimension_label, time_dimension_label) = _request(series, economy, time, mrv, mrnev, params)
     aggs = w.economy.aggregates()
 
     for row in w.fetch(url, params_):
@@ -58,6 +58,8 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
                 if skipAggs and elem['id'] in aggs:
                     skip = True
                     break
+            elif key == time_dimension_label:
+                key = w.time_key
 
             if not skip:
                 if labels:
@@ -65,26 +67,30 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
                     x[key] = elem
                     if key == w.economy_key:
                         x[key]['aggregate'] = elem['id'] in aggs
+                    elif key == w.time_key and numericTimeKeys and elem['value'].isdigit():
+                        x[key]['id'] = elem['value']
                 else:
                     x[key] = elem['id']
                     if key == w.economy_key:
                         x['aggregate'] = elem['id'] in aggs
+                    elif key == w.time_key and numericTimeKeys and elem['value'].isdigit():
+                        x[key] = int(elem['value'])
 
         if not skip:
             yield x
 
-def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}):
+def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, timeColumns=False, params={}):
 
     if pd is None:
         raise ModuleNotFoundError('you must install pandas to use this feature')
 
     if type(axes) is str and axes == 'auto':
         axes = ['economy', 'series', 'time']
-        if mrv == 1 or mrnev == 1 or (time != 'all' and len(w.queryParam(time).split(';')) == 1):
+        if mrv == 1 or mrnev == 1 or (time != 'all' and len(w.time.queryParam(time).split(';')) == 1):
             axes.remove('time')
-        elif len(w.queryParam(series).split(';')) == 1:
+        elif len(w.series.queryParam(series).split(';')) == 1:
             axes.remove('series')
-        elif economy != 'all' and len(w.queryParam(economy).split(';')) == 1:
+        elif economy != 'all' and len(w.economy.queryParam(economy).split(';')) == 1:
             axes.remove('economy')
         else:
             del(axes[2])
@@ -95,20 +101,32 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
 
     # for now let's see if it works to build the dataframe dynamically
     df = pd.DataFrame()
-    key = 'value' if labels else 'id'
+    dummy = pd.Series()    # empty series - never assigned actual values
+    if labels:
+        # create a separate dataframe for labels so that we can control the column position below
+        df2 = pd.DataFrame()
 
-    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, params=params):
-        df.loc[row[axes[0]][key], row[axes[1]][key]] = row['value']
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params):
+        # this logic only assigns values to locations that don't yet exist. First observations thus take precedent over subsequent ones
+        if pd.isna(df.get(row[axes[1]]['id'], dummy).get(row[axes[0]]['id'])):
+            df.loc[row[axes[0]]['id'], row[axes[1]]['id']] = row['value']
+            if timeColumns:
+                df.loc[row[axes[0]]['id'], row[axes[1]]['id'] + ':T'] = row['time']['value']
+
+            if labels:
+                df2.loc[row[axes[0]]['id'], 'Label'] = row[axes[0]]['value']
         
     df.sort_index(axis=0,inplace=True)
     df.sort_index(axis=1,inplace=True)
+    if labels:
+        return pd.concat([df2,df], axis=1,sort=True)
+        
     return df
         
-        
 
-def get(series, economy, time='all', mrv=None, mrnev=None, labels=False):
+def get(series, economy, time='all', mrv=None, mrnev=None, labels=False, numericTimeKeys=False):
 
-    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, labels=labels, params={'per_page': 1}):
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, labels=labels, numericTimeKeys=numericTimeKeys, params={'per_page': 1}):
         return row
 
 def footnote(series, economy, time):
@@ -133,5 +151,6 @@ def _request(series, economy='all', time='all', mrv=None, mrnev=None, params={})
         params_['mrnev'] = mrnev
 
     economy_dimension_label = w.economy.dimension_name()
-    url = '{}/{}/sources/{}/series/{}/{}/{}/time/{}'.format(w.endpoint, w.lang, w.db, w.queryParam(series), economy_dimension_label, w.queryParam(economy), w.queryParam(time))
-    return (url, params_, economy_dimension_label)
+    time_dimension_label = w.time.dimension_name()
+    url = '{}/{}/sources/{}/series/{}/{}/{}/{}/{}'.format(w.endpoint, w.lang, w.db, w.series.queryParam(series), economy_dimension_label, w.economy.queryParam(economy), time_dimension_label, w.time.queryParam(time))
+    return (url, params_, economy_dimension_label, time_dimension_label)

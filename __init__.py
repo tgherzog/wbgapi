@@ -15,6 +15,7 @@ endpoint = 'https://api.worldbank.org/v2'
 lang = 'en'
 db = 2
 economy_key = 'economy' # used to map a database's economy dimension to a standard constant
+time_key    = 'time'    # used to map a databases time dimension
 
 class APIError(Exception):
   def __init__(self,url,msg,code=None):
@@ -214,14 +215,12 @@ def _queryAPI(url):
     return (hdr, result)
 
 def queryParam(arg):
-    ''' convert an API parameter to a semicolon-delimited string
+    ''' Prepare parameters for an API query
     '''
 
     if type(arg) is str or type(arg) is int:
         return str(arg)
 
-    try:
-        return ';'.join(map(lambda x:str(x), arg))
-    except:
-        return None
+    # this will throw an exception if arg is not iterable, which is what we want it to do
+    return ';'.join(map(lambda x:str(x), arg))
 
