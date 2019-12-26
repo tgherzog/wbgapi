@@ -35,6 +35,16 @@ class Metadata():
         self.id = id
         self.metadata = {}
 
+    def __str__(self):
+        s = '{}: {}\n'.format(self.concept, self.id)
+        for k,v in self.metadata.items():
+            s2 = '{}:\n{}'.format(k, v)
+            s += s2 + '\n'
+
+        return s
+
+    def __repr__(self):
+        return '<[Metadata: [{}-{}]>'.format(self.concept, self.id)
 
 
 def fetch(url,params={},concepts=False):
@@ -210,8 +220,8 @@ def queryParam(arg):
     if type(arg) is str or type(arg) is int:
         return str(arg)
 
-    if type(arg) is list:
+    try:
         return ';'.join(map(lambda x:str(x), arg))
-
-    return None
+    except:
+        return None
 
