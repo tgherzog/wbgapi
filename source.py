@@ -5,6 +5,7 @@ import urllib.parse
 
 # concepts cached per database
 _concepts = {}
+_metadata_flags = {}
 
 def list(id='all'):
     '''Iterate of list of databases
@@ -109,6 +110,28 @@ def feature(concept, id, db=None):
     '''
 
     return w.get(_concepturl(concept, id, db))
+
+def has_metadata(db=None):
+    '''Return True/False on whether the database has metadata
+
+    Parameters:
+        db:     the database to query
+
+    Returns:
+        Boolean
+    '''
+
+    if db is None:
+        db = w.db
+
+    global _metadata_flags
+    m = _metadata_flags.get(db)
+    if m is None:
+        src = get(db)
+        m = src.get('metadataavailability','').upper() == 'Y'
+        _metadata_flags[db] = m
+
+    return m
 
 def _sourceurl(db):
     '''Return the URL for fetching source objects

@@ -1,7 +1,7 @@
 
 import wbgapi as w
 
-def fetch(id,countries=[],time=[]):
+def fetch(id,countries=[],time=[],db=None):
     '''Return metadata for specified series
 
     Arguments:
@@ -22,7 +22,13 @@ def fetch(id,countries=[],time=[]):
     if type(time) is str:
         time = [time]
 
-    url = '{}/{}/sources/{}/series/{}/metadata'.format(w.endpoint, w.lang, w.db, w.queryParam(id))
+    if db is None:
+        db = w.db
+
+    if not w.source.has_metadata(db):
+        return None
+
+    url = '{}/{}/sources/{}/series/{}/metadata'.format(w.endpoint, w.lang, db, w.queryParam(id))
     for row in w.metadata(url):
         if countries:
             row.countries = {}
@@ -30,7 +36,7 @@ def fetch(id,countries=[],time=[]):
             while n < len(countries):
                 cs = ';'.join(['{}~{}'.format(elem,row.id) for elem in countries[n:n+pg_size]])
                 n += pg_size
-                url2 = '{}/{}/sources/{}/Country-Series/{}/metadata'.format(w.endpoint, w.lang, w.db, cs)
+                url2 = '{}/{}/sources/{}/Country-Series/{}/metadata'.format(w.endpoint, w.lang, db, cs)
 
                 # requests for non-existing data throw malformed responses so we must catch for them
                 try:
@@ -46,7 +52,7 @@ def fetch(id,countries=[],time=[]):
             while n < len(time):
                 st = ';'.join(['{}~{}'.format(row.id,elem) for elem in time[n:n+pg_size]])
                 n += pg_size
-                url2 = '{}/{}/sources/{}/Series-Time/{}/metadata'.format(w.endpoint, w.lang, w.db, st)
+                url2 = '{}/{}/sources/{}/Series-Time/{}/metadata'.format(w.endpoint, w.lang, db, st)
 
                 try:
                     for row2 in w.metadata(url2):
@@ -57,7 +63,7 @@ def fetch(id,countries=[],time=[]):
         yield row
 
 
-def get(id,countries=[],time=[]):
+def get(id,countries=[],time=[],db=None):
     
-    for row in fetch(id, countries, time):
+    for row in fetch(id, countries, time, db):
         return row
