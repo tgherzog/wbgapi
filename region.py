@@ -7,7 +7,7 @@ import builtins
 def list(id='all',group=None):
     '''Return a list of regions
 
-    Parameters:
+    Arguments:
         id:         a region identifier or list-like of identifiers
 
         group:      subgroup to return. Can be one of: 'admin', 'geo', 'allincomelevels', 'demodividend', 'smallstates', 'other'
@@ -29,7 +29,7 @@ def list(id='all',group=None):
 def get(id):
     '''Retrieve the specified region
 
-    Parameters:
+    Arguments:
         id:         the region ID
 
     Returns:
@@ -46,7 +46,7 @@ def get(id):
 def members(id,param='region'):
     '''Return a set of economy identifiers that are members of the specified region
 
-    Parameters:
+    Arguments:
         id:     a region identifier
 
         param:  used internally
@@ -68,7 +68,7 @@ def members(id,param='region'):
 def Series(id='all', group=None, name='RegionName'):
     '''Return a pandas Series object for the requested regions
 
-    Parameters:
+    Arguments:
         id:         a region identifier or list-like of identifiers
 
         group:      subgroup to return. See list() for possible values
@@ -84,7 +84,7 @@ def Series(id='all', group=None, name='RegionName'):
 def info(id='all',group=None):
     '''Print a user report of regions.
 
-    Parameters:
+    Arguments:
         id:         a region identifier or list-like of identifiers
 
         group:      subgroup to return. See list() for possible values

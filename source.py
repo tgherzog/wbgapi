@@ -1,4 +1,13 @@
 
+'''Access information about World Bank databases
+
+World Bank databases are multi-dimensional databases that at a minimum
+have series, economy, and time dimensions. Concept names are not consistent
+across databases, but the wbgapi module tries to insulate the user from
+these inconsistencies. Additional (4th or 5th) dimensions are possible but are not currently
+supported.
+'''
+
 import wbgapi as w
 import urllib.parse
 
@@ -8,17 +17,17 @@ _concepts = {}
 _metadata_flags = {}
 
 def list(id='all'):
-    '''Iterate of list of databases
+    '''Return a list of databases
 
-    Parameters:
-        id:     the database ID to return
+    Arguments:
+        id:     a database identifier or list-like
 
     Returns:
         a generator object
 
     Example:
         for elem in wbgapi.source.list():
-            print elem['id'], elem['name'], elem['lastupdated']
+            print(elem['id'], elem['name'], elem['lastupdated'])
     '''
 
     return w.fetch(_sourceurl(w.queryParam(id)), {'databid': 'y'})
@@ -26,7 +35,7 @@ def list(id='all'):
 def get(db=None):
     '''Retrieve the record for a single database
 
-    Parameters:
+    Arguments:
         db:      the database ID (e.g., 2=WDI). Default to the global db
 
     Returns:
@@ -39,22 +48,18 @@ def get(db=None):
     return w.get(_sourceurl(db), {'databid': 'y'})
 
 def concepts(db=None):
-    '''Retrieve the concepts for the specified database
+    '''Retrieve the concepts for the specified database. This is primarily
+    used internally to provide a consistent interface
 
-    Parameters:
-        db:     the database ID (e.g., 2=WDI). Default to the global db
+    Arguments:
+        db:     the database ID (e.g., 2=WDI). Default to the global database
 
     Returns:
         a dictionary of concepts: keys are URL friendly
 
-    Notes:
-        The series module uses this function to ascertain the correct name of the political-economic
-        dimension of a time series database. In most cases this is 'country' but 'economy,' 'states'
-        and others are used in some cases
-
     Example:
-        for k,v in wbgapi.source.concepts(2).iteritems():
-            print k, v
+        for k,v in wbgapi.source.concepts(2).items():
+            print(k, v)
     '''
 
     global _concepts
@@ -77,30 +82,36 @@ def concepts(db=None):
     return c
 
 def features(concept, id='all', db=None):
-    '''Retrieve features for the specified database
+    '''Retrieve features for the specified database. This is an internal function
+    called by list() in other modules.
 
-    Parameters:
+    Arguments:
         concept:    the concept to retrieve (e.g., 'series')
+
         id:         object identifiers to retrieve; must be a well-formed string
-        db:         the database to access (e.g., 2=WDI). Default uses the current database
+
+        db:         the database to access (e.g., 2=WDI). Default uses the global database
 
     Returns:
         a generator object
 
     Example:
         for elem in wbgapi.source.features('time'):
-            print elem['id'], elem['value']
+            print(elem['id'], elem['value'])
     '''
 
     return w.fetch(_concepturl(concept, id, db))
 
 def feature(concept, id, db=None):
-    '''Retrieve a single feature for the specified database
+    '''Retrieve a single feature for the specified database. This is an internal function
+    called by get() in other modules.
 
-    Parameters:
+    Arguments:
         concept:    the concept to retrieve (e.g., 'series')
+
         id:         the object ID
-        db:         the database to access (e.g., 2=WDI). Default uses the current database
+
+        db:         the database to access (e.g., 2=WDI). Default uses the global database
 
     Returns:
         a database object
@@ -112,10 +123,11 @@ def feature(concept, id, db=None):
     return w.get(_concepturl(concept, id, db))
 
 def has_metadata(db=None):
-    '''Return True/False on whether the database has metadata
+    '''Test whether the specified database is expected to have metadata, as determined
+    by the database record returned from the API.
 
-    Parameters:
-        db:     the database to query
+    Arguments:
+        db:     the database to query. Pass None to reference the global database
 
     Returns:
         Boolean
@@ -134,7 +146,7 @@ def has_metadata(db=None):
     return m
 
 def _sourceurl(db):
-    '''Return the URL for fetching source objects
+    '''Internal function: returns the URL for fetching database objects
     '''
 
     if db is None:
@@ -143,7 +155,7 @@ def _sourceurl(db):
     return '{}/{}/sources/{}'.format(w.endpoint, w.lang, db)
 
 def _concepturl(concept, id, db):
-    '''Return the URL for fetching source objects
+    '''Internal function: return the URL for fetching database features
     '''
 
     if db is None:

@@ -7,7 +7,7 @@ import builtins
 def list(id='all'):
     '''Return a list of lending groups
 
-    Parameters:
+    Arguments:
         id:         a lending group identifier or list-like of identifiers
 
     Returns:
@@ -24,7 +24,7 @@ def list(id='all'):
 def get(id):
     '''Retrieve the specified lending group
 
-    Parameters:
+    Arguments:
         id:         the lending group ID
 
     Returns:
@@ -40,7 +40,7 @@ def get(id):
 def members(id):
     '''Return a set of economy identifiers that are members of the specified lending group
 
-    Parameters:
+    Arguments:
         id:     a lending group identifier
 
     Returns:
@@ -55,7 +55,7 @@ def members(id):
 def Series(id='all',name='LendingGroupName'):
     '''Return a pandas Series object for the requested lending groups
 
-    Parameters:
+    Arguments:
         id:         a lending group identifier or list-like of identifiers
 
         name:       the Series column name
@@ -69,7 +69,7 @@ def Series(id='all',name='LendingGroupName'):
 def info(id='all'):
     '''Print a user report of lending groups
 
-    Parameters:
+    Arguments:
         id:         a lending group identifier or list-like of identifiers
 
     Returns:

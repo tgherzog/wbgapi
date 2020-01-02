@@ -7,7 +7,7 @@ except ImportError:
 
 def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, params={}):
     '''Retrieve API data for the current database
-    Parameters:
+    Arguments:
         series: (required) the series identifier, e.g., SP.POP.TOTL
 
         economy: country code to select. default=all

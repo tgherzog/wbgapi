@@ -65,7 +65,7 @@ def fetch(url,params={},concepts=False):
     variety of response structures depending on the endpoint. fetch() sniffs
     the response structure and return the most appropriate set of iterated objects.
 
-    Parameters:
+    Arguments:
         url:        full URL for the API query, minus the query string
 
         params:     optional query string parameters (required defaults are supplied by the function)
@@ -106,7 +106,7 @@ def fetch(url,params={},concepts=False):
 def get(url,params={},concepts=False):
     '''Return a single response from the API
 
-    Parameters:
+    Arguments:
         url:        full URL for the API query, minus the query string
 
         params:     optional query string parameters (required defaults are supplied by the function)
@@ -134,7 +134,7 @@ def get(url,params={},concepts=False):
 def metadata(url,params={},concepts='all'):
     '''Return metadata records
 
-    Parameters:
+    Arguments:
         url:        Full url for the API request (minus the query string)
 
         params:     Optional query parameters
@@ -244,7 +244,7 @@ def queryParam(arg):
     ''' Prepare parameters for an API query. This is a core function
     called by several dimension-specific functions of the same name
 
-    Parameters:
+    Arguments:
         arg:        a record identifier or list-like of identifiers
 
     Returns:
@@ -284,7 +284,7 @@ def printInfo(info,key='id',value='value'):
     '''Print a user report of dimension values. This core function is called
     by the info() function in several modules.
 
-    Parameters:
+    Arguments:
         info:       an object array
 
         key:        key for column 1 values

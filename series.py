@@ -19,7 +19,7 @@ def list(id='all'):
 def get(id):
     '''Get a single indicator object
 
-    Parameters:
+    Arguments:
         id:     The object ID
 
     Returns:

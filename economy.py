@@ -40,7 +40,7 @@ def list(id='all',labels=False):
 def get(id,labels=False):
     '''Retrieve the specified economy
 
-    Parameters:
+    Arguments:
         id:     the economy ID
 
     Returns:
