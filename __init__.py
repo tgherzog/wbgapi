@@ -3,11 +3,15 @@
 '''
 
 import urllib.parse
+from functools import reduce
 import requests
 from . import series
 from . import source
 from . import economy
 from . import time
+from . import region
+from . import incomelevel
+from . import lendingtype
 from . import data
 
 # defaults
@@ -224,3 +228,13 @@ def queryParam(arg):
     # this will throw an exception if arg is not iterable, which is what we want it to do
     return ';'.join(map(lambda x:str(x), arg))
 
+def printInfo(info,key='id',value='value'):
+    '''Utility function to print dimension information
+    '''
+
+    maxKey = len( reduce(lambda a,b: a if len(a) > len(b) else b, [row[key] for row in info]) )
+    print('{:{}}  {}'.format(key, maxKey, value))
+    for row in info:
+        print('{:{}}  {}'.format(row[key], maxKey, row[value]))
+
+    print('{}  {} elements'.format(' ' * maxKey, len(info)))

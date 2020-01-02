@@ -64,3 +64,6 @@ def queryParam(arg):
 
     v = periods()
     return ';'.join(map(lambda x: str(v.get(str(x),x)), arg))
+
+def info(id='all'):
+    w.printInfo(builtins.list(list(id)))

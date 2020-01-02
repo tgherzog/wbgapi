@@ -1,6 +1,7 @@
 
 import wbgapi as w
 from . import series_metadata as metadata
+import builtins
 
 def list(id='all'):
     '''Iterate over the list of indicators/series in the current database
@@ -35,3 +36,6 @@ def queryParam(arg):
     '''
 
     return w.queryParam(arg)
+
+def info(id='all'):
+    return w.printInfo(builtins.list(list(id)))

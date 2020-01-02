@@ -22,11 +22,17 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
 
         labels: set to True to include both dimension id and name (e.g., ZWE & Zimbabwe, not just ZWE)
 
-        skipAggs:    set to True to skip aggregates (return only countries)
+        skipAggs:    set to True to skip aggregates (return only economies)
+
+        numericTimeKeys:   store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
+
+        params:             extra query parameters to pass to the API
 
     Notes:
         series, economy and time can be either scalar strings ('SP.POP.TOTL', 'BRA')
-        or arrays (['SP.POP.TOTL', 'NY.GDP.PCAP.CD'], ['BRA', 'ARG'])
+        or array-like objects (['SP.POP.TOTL', 'NY.GDP.PCAP.CD'], ['BRA', 'ARG'])
+
+        time values can be either keys (e.g., 'YR2014') or values (2014)
 
     Returns:
         A generator object
@@ -35,6 +41,10 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         # print name and population of all economies
         for elem in wbgapi.data.fetch('SP.POP.TOTL',labels=True):
             print elem['economy']['value'], elem['time']['value'], elem['value']
+
+        # fetch data for Brazil for odd-numbered years
+        for elem in wbgapi.data.fetch('NY.GDP.PCAP.CD', 'BRA', range(2011,2020,2)):
+            print elem['value']
 
         # dict of most recent population data for economies over 100000
         popData = {elem['economy']: elem['value'] for elem in wbgapi.data.fetch('SP.POP.TOTL', mrnev=1, skipAggs=True) if elem['value'] > 100000}
@@ -68,7 +78,7 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
                     if key == w.economy_key:
                         x[key]['aggregate'] = elem['id'] in aggs
                     elif key == w.time_key and numericTimeKeys and elem['value'].isdigit():
-                        x[key]['id'] = elem['value']
+                        x[key]['id'] = int(elem['value'])
                 else:
                     x[key] = elem['id']
                     if key == w.economy_key:
@@ -80,6 +90,36 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
             yield x
 
 def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, timeColumns=False, params={}):
+    '''Retrieve a 2-dimensional pandas dataframe. 
+    
+    Arguments:
+        series: (required) the series identifier, e.g., SP.POP.TOTL
+
+        economy: country code to select. default=all
+
+        time: time period to select. default=all
+
+        axes: a 2-element array specifying the index (row) and column of the dataframe. If 'auto' then
+              the function will choose these for you based on other parameters. This can give somewhat
+              unpredicatable results if multiple series, economies and time periods are passed
+        
+        mrv:  return only the specified number of most recent values (same time period for all economies)
+
+        mrnev: return only the specified number of non-empty most recent values (time period varies per country)
+
+        skipBlanks:  set to True to skip empty observations
+
+        labels:     include the dimension name for rows
+
+        slipAggs:   skip aggregates (return only economies)
+
+        numericTimeKeys:   store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
+
+        timeColumns:        add extra columns to show the time dimension for each series/economy
+
+        params:             extra query parameters to pass to the API
+        
+    '''
 
     if pd is None:
         raise ModuleNotFoundError('you must install pandas to use this feature')
@@ -98,6 +138,10 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
     t = set(axes)
     if len(t) != 2 or t - set(['economy', 'series', 'time']):
         raise ValueError('axes must be \'auto\' or exactly 2 of economy, series, time')
+
+    # sanity check: don't include time column if it's a dimension
+    if 'time' in axes:
+        timeColumns = False
 
     # for now let's see if it works to build the dataframe dynamically
     df = pd.DataFrame()
