@@ -1,15 +1,20 @@
 
+'''Access information about World Bank income groups
+'''
 import wbgapi as w
 import builtins
 
 def list(id='all'):
-    '''Return a list of income levels
+    '''Return a list of income groups
 
     Parameters:
-        id:         an income identifier or list-like of identifiers
+        id:         an income group identifier or list-like of identifiers
 
     Returns:
         a generator object
+
+    Example:
+        incomeGroups = {row['id']: row['value'] for row in wbapi.income.list()}
     '''
 
     url = '{}/{}/incomelevel/{}'.format(w.endpoint, w.lang, w.queryParam(id))
@@ -17,12 +22,29 @@ def list(id='all'):
         yield row
 
 def get(id):
+    '''Retrieve the specified income group
+
+    Parameters:
+        id:         the income group ID
+
+    Returns:
+        an income group object
+
+    Example:
+        print(wbgapi.income.get('LIC')['name'])
+    '''
     
     url = '{}/{}/incomeLevel/{}'.format(w.endpoint, w.lang, w.queryParam(id))
     return w.get(url)
 
 def members(id):
-    '''Return a set of members for the requested incomelevel
+    '''Return a set of economy identifiers that are members of the specified income group
+
+    Parameters:
+        id:     an income group identifier
+
+    Returns:
+        a set object of economy identifiers
 
     Notes:
         the returned members may not match the economies in the current database since we access the universal region lists from the API
@@ -30,11 +52,27 @@ def members(id):
 
     return w.region.members(id, 'incomelevel')
 
-def Series(id='all',name='IncomeLevelName'):
-    '''Return a pandas series for the requested incomeLevel
+def Series(id='all',name='IncomeGroupName'):
+    '''Return a pandas Series object for the requested income groups
+
+    Parameters:
+        id:         an income group identifier or list-like of identifiers
+
+        name:       the Series column name
+
+    Returns:
+        a pandas Series object
     '''
 
     return w.pandasSeries(builtins.list(list(id)), name=name)
 
 def info(id='all'):
+    '''Print a user report of income groups
+
+    Parameters:
+        id:         an income group identifier or list-like of identifiers
+
+    Returns:
+        None
+    '''
     w.printInfo(builtins.list(list(id)))
