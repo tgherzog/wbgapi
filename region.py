@@ -46,5 +46,11 @@ def members(id,param='region'):
 
     return e
 
-def info(id='all'):
-    w.printInfo(builtins.list(list(id)), 'code', 'name')
+def Series(id='all', group=None, name='RegionName'):
+    '''Return a pandas series for the requested region
+    '''
+
+    return w.pandasSeries(builtins.list(list(id, group=group)), key='code',value='name', name=name)
+
+def info(id='all',group=None):
+    w.printInfo(builtins.list(list(id,group=group)), 'code', 'name')

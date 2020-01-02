@@ -13,11 +13,18 @@ from . import region
 from . import incomelevel
 from . import lendingtype
 from . import data
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
-# defaults
+
+# defaults: these can be changed at runtime with reasonable results
 endpoint = 'https://api.worldbank.org/v2'
 lang = 'en'
 db = 2
+
+# these are treated as system constants. Change at your own risk (and why would you?)
 economy_key = 'economy' # used to map a database's economy dimension to a standard constant
 time_key    = 'time'    # used to map a databases time dimension
 
@@ -227,6 +234,14 @@ def queryParam(arg):
 
     # this will throw an exception if arg is not iterable, which is what we want it to do
     return ';'.join(map(lambda x:str(x), arg))
+
+def pandasSeries(data, key='id',value='value',name='value'):
+
+    
+    if pd is None:
+        raise ModuleNotFoundError('you must install pandas to use this feature')
+
+    return pd.Series({row[key]: row[value] for row in data}, name=name)
 
 def printInfo(info,key='id',value='value'):
     '''Utility function to print dimension information

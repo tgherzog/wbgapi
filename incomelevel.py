@@ -30,5 +30,11 @@ def members(id):
 
     return w.region.members(id, 'incomelevel')
 
+def Series(id='all',name='IncomeLevelName'):
+    '''Return a pandas series for the requested incomeLevel
+    '''
+
+    return w.pandasSeries(builtins.list(list(id)), name=name)
+
 def info(id='all'):
     w.printInfo(builtins.list(list(id)))
