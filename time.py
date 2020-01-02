@@ -26,14 +26,15 @@ def list(id='all'):
         a generator object
 
     Example:
-        for elem in wbgapi.time.list():
+        # fetch even-numbered time elements for a decade
+        for elem in wbgapi.time.list(range(2010,2020,2)):
             print(elem['id'], elem['value'])
     '''
 
     return w.source.features(dimension_name(), queryParam(id))
 
 def get(id):
-    '''Retrieve the specific time element
+    '''Retrieve the specified time element
 
     Arguments:
         id: the time identifier
@@ -88,7 +89,7 @@ def dimension_name(db=None):
     return t
 
 def queryParam(arg):
-    '''Prepare parameters for API query
+    '''Prepare parameters for an API query
     '''
 
     if type(arg) is str or type(arg) is int:
@@ -101,7 +102,7 @@ def info(id='all'):
     '''Print a user report of time features
 
     Arguments:
-        id:         a time identifier or list-like of identifiers
+        id:         a time identifier or list-like
 
     Returns:
         None

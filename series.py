@@ -1,10 +1,16 @@
 
+'''Access information about series in a database
+'''
+
 import wbgapi as w
 from . import series_metadata as metadata
 import builtins
 
 def list(id='all'):
-    '''Iterate over the list of indicators/series in the current database
+    '''Return a list of series elements in the current database
+
+    Arguments:
+        id:     a series identifier (i.e., CETS code) or list-like
 
     Returns:
         a generator object
@@ -17,13 +23,13 @@ def list(id='all'):
     return w.source.features('series', queryParam(id))
 
 def get(id):
-    '''Get a single indicator object
+    '''Retrieve a specific series object
 
     Arguments:
-        id:     The object ID
+        id:     the series identifier
 
     Returns:
-        A database object
+        a series object
 
     Example:
         print(wbgapi.series.get('SP.POP.TOTL')['value'])
@@ -38,4 +44,14 @@ def queryParam(arg):
     return w.queryParam(arg)
 
 def info(id='all'):
-    return w.printInfo(builtins.list(list(id)))
+    '''Print a user report of series. This can be time consuming
+    for large databases like the WDI if 'all' series are requested.
+
+    Arguments:
+        id:         a series identifier or list-like of identifiers
+
+    Returns:
+        None
+    '''
+
+    w.printInfo(builtins.list(list(id)))

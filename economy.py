@@ -1,4 +1,18 @@
 
+'''Access information about the economies in a database.
+
+Economies can include countries, aggregates, and sub-national regions. The
+economy dimension in a World Bank database can go by various concept names,
+but the wbgapi module tries to insulate the user from most of these
+inconsistencies.
+
+Each database in the World Bank API has its own list of economies. However,
+databases that are country-based share a common set of classifications for regions,
+income and lending groups. The wbgapi tries to integrate these by including
+classifications in economy records where possible. Obviously these won't apply
+to databases that don't adhere to the country-level coding standards.
+'''
+
 import wbgapi as w
 from . import economy_metadata as metadata
 import builtins
@@ -20,13 +34,16 @@ _class_data = None
 _localized_metadata = {}
 
 def list(id='all',labels=False):
-    '''Iterate over the list of time elements in the current database
+    '''Return a list of economies in the current database
+
+    Arguments:
+        id:     an economy identifier or list-like
 
     Returns:
         a generator object
 
     Example:
-        for elem in wbgapi.time.list():
+        for elem in wbgapi.economy.list():
             print(elem['id'], elem[' value'])
 
     '''
@@ -41,7 +58,7 @@ def get(id,labels=False):
     '''Retrieve the specified economy
 
     Arguments:
-        id:     the economy ID
+        id:     an economy ID
 
     Returns:
         a database object
@@ -72,6 +89,20 @@ def _build(row,labels=False):
 
 
 def DataFrame(id='all',labels=False):
+    '''Return a pandas DataFrame of economy records
+
+    Arguments:
+        id:     an economy identifier or list-like
+
+        labels: Pass True to return classification names instead of their 3-character identifier codes
+
+    Returns:
+        a pandas DataFrame
+
+    Example:
+        # fetch a DataFrame of high-income countries
+        df = wbgapi.economy.DataFrame(wbgapi.income.members('HIC'))
+    '''
 
     if pd is None:
         raise ModuleNotFoundError('you must install pandas to use this feature')
@@ -123,7 +154,7 @@ def queryParam(arg):
 
 def aggregates():
     '''Returns a set object with both the 2-character and 3-character codes
-    of aggregate economies. These are obtained from the API upon first call
+    of aggregate economies. These are obtained from the API and then cached.
     '''
 
     global _aggs
@@ -132,7 +163,8 @@ def aggregates():
     return _aggs
 
 def update_caches():
-    '''Update internal metadata caches
+    '''Update internal metadata caches. This needs to be called prior to
+    any fetch from an economy endpoint
     '''
     global _localized_metadata, _iso2Codes, _class_data, _aggs
 
@@ -183,4 +215,12 @@ def update_caches():
             _localized_metadata[w.lang]['capitalCity:'+row['id']] = row['capitalCity'].strip()
             
 def info(id='all'):
+    '''Print a user report of economies
+
+    Arguments:
+        id:         an economy identifier or list-like
+
+    Returns:
+        None
+    '''
     w.printInfo(builtins.list(list(id)))
