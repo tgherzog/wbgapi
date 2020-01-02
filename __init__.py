@@ -1,5 +1,6 @@
 
-'''This module provides a very rudimentary interface to the World Bank's data API.
+'''wbgapi provides a comprehensive interface to the World Bank's data and
+metadata API with built-in pandas integration
 '''
 
 import urllib.parse
@@ -10,8 +11,8 @@ from . import source
 from . import economy
 from . import time
 from . import region
-from . import incomelevel
-from . import lendingtype
+from . import income
+from . import lending
 from . import data
 try:
     import pandas as pd
@@ -60,19 +61,23 @@ class Metadata():
 
 
 def fetch(url,params={},concepts=False):
-    '''Iterate over an API response with automatic paging
+    '''Iterate over an API request with automatic paging.  The API returns a
+    variety of response structures depending on the endpoint. fetch() sniffs
+    the response structure and return the most appropriate set of iterated objects.
 
     Parameters:
-        url: full URL for the API query, minus the query string
+        url:        full URL for the API query, minus the query string
 
-        params: optional query string parameters (required defaults are supplied by the function)
+        params:     optional query string parameters (required defaults are supplied by the function)
+
+        concepts:   pass True to return results at the concept level, as opposed to the element/variable level
 
     Returns:
-        a generator object
+        a generator object.
 
     Example:
         for row in wbgapi.fetch('https://api.worldbank.org/countries'):
-          print row['name']
+          print(row['id'], row['name'])
     '''
 
     params_ = {'per_page': 100}
@@ -102,15 +107,17 @@ def get(url,params={},concepts=False):
     '''Return a single response from the API
 
     Parameters:
-        url: full URL for the API query, minus the query string
+        url:        full URL for the API query, minus the query string
 
-        params: optional query string parameters (required defaults are supplied by the function)
+        params:     optional query string parameters (required defaults are supplied by the function)
+
+        concepts:   pass True to return a result at the concept level, as opposed to the element/variable level
 
     Returns:
         First row from the response
 
     Example:
-        print wbgapi.get('https://api.worldbank.org/countries/BRA')['name']
+        print(wbgapi.get('https://api.worldbank.org/countries/BRA')['name'])
     '''
 
     params_ = params.copy()
@@ -128,14 +135,22 @@ def metadata(url,params={},concepts='all'):
     '''Return metadata records
 
     Parameters:
-        url:        Full url to pass to fetch (minus the query string)
+        url:        Full url for the API request (minus the query string)
 
         params:     Optional query parameters
 
-        concepts:   Name or array of the concepts to return: 'all' for all concepts
+        concepts:   Name or list-like of the concepts to return: 'all' for all concepts
 
     Returns:
-        A generator that returns Metadata objects
+        a generator that returns Metadata objects
+
+    Example:
+        for meta in wbgapi.metadata('https://api.worldbank.org/v2/sources/2/series/SP.POP.TOTL/country/FRA;CAN/metadata',
+            concepts=['Series','Country-Series']):
+                print(meta.concept, meta.id, len(meta.metadata))
+                
+    Notes:
+        Each return from the generator will include a unique concept/id pair and a complete corresponding metadata record
     '''
 
     if concepts == 'all':
@@ -226,7 +241,14 @@ def _queryAPI(url):
     return (hdr, result)
 
 def queryParam(arg):
-    ''' Prepare parameters for an API query
+    ''' Prepare parameters for an API query. This is a core function
+    called by several dimension-specific functions of the same name
+
+    Parameters:
+        arg:        a record identifier or list-like of identifiers
+
+    Returns:
+        a semicolon separated API-ready parameter string
     '''
 
     if type(arg) is str or type(arg) is int:
@@ -236,6 +258,21 @@ def queryParam(arg):
     return ';'.join(map(lambda x:str(x), arg))
 
 def pandasSeries(data, key='id',value='value',name='value'):
+    '''Convert an object array to a pandas Series object. This core function is
+    called by several dimension-specific implementation functions
+
+    Arguments:
+        data:       an object array. Each object becomes a Series row
+
+        key:        field for the Series index
+
+        value:      field for the Series column values
+
+        name:       Series column name
+
+    Returns:
+        a pandas Series object
+    '''
 
     
     if pd is None:
@@ -244,7 +281,18 @@ def pandasSeries(data, key='id',value='value',name='value'):
     return pd.Series({row[key]: row[value] for row in data}, name=name)
 
 def printInfo(info,key='id',value='value'):
-    '''Utility function to print dimension information
+    '''Print a user report of dimension values. This core function is called
+    by the info() function in several modules.
+
+    Parameters:
+        info:       an object array
+
+        key:        key for column 1 values
+
+        value:      key for column 2 values
+
+    Returns:
+        None
     '''
 
     maxKey = len( reduce(lambda a,b: a if len(a) > len(b) else b, [row[key] for row in info]) )
