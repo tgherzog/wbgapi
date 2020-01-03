@@ -10,6 +10,7 @@ setuptools.setup(
     author="Tim Herzog",
     # author_email="author@example.com",
     description="wbgapi provides a comprehensive interface to the World Bank's daeta and metadata APIs",
+    license='MIT',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/tgherzog/wbgapi",
