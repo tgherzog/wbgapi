@@ -10,6 +10,7 @@ supported.
 
 import wbgapi as w
 import urllib.parse
+import builtins
 
 
 # concepts cached per database
@@ -145,6 +146,18 @@ def has_metadata(db=None):
 
     return m
 
+def info(id='all'):
+    '''Print a user report of databases
+
+    Arguments:
+        id:         a database identifier or list-like
+
+    Returns:
+        None
+    '''
+    
+    w.printInfo(builtins.list(list(id)), value='name')
+
 def _sourceurl(db):
     '''Internal function: returns the URL for fetching database objects
     '''
@@ -166,4 +179,5 @@ def _concepturl(concept, id, db):
         return None
 
     return '{}/{}/sources/{}/{}/{}'.format(w.endpoint, w.lang, db, concept, id)
+
 
