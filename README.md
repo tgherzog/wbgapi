@@ -113,9 +113,7 @@ Use `get()` and `list()` to access the underlying objects:
     wb.economy.get('COL')
     {'id': 'COL', 'value': 'Colombia', 'aggregate': False, 'longitude': -74.082, 'latitude': 4.60987, 'region': 'LCN', 'adminregion': 'LAC', 'lendingType': 'IBD', 'incomeLevel': 'UMC', 'capitalCity': 'Bogota'}
 
-    for row in wb.series.list(['SP.POP.TOTL', 'SI.POV.NAHC']):
-        stuff[row['id']] = row['value']
-
+    stuff = {i['id']: i['value'] for i in wb.series.list(['SP.POP.TOTL', 'SI.POV.NAHC'])}
     stuff
     {'SP.POP.TOTL': 'Population, total', 'SI.POV.NAHC': 'Poverty headcount ratio at national poverty lines (% of population)'}
 
