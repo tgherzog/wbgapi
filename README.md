@@ -135,7 +135,7 @@ Again, use `fetch()` for multiple rows of data, and `get()` for single rows:
     # this request fetches data for 3 countries from 2015 onward. Be careful with requests
     # that omit constraints on economies and/or time as these can take a long time to run
     # and return large numbers of rows
-    for row in wb.data.fetch('SP.POP.TOTL', economy=['BRA', 'ARG', 'URY'], time=range(2015,2020)):
+    for row in wb.data.fetch('SP.POP.TOTL', economy=['BRA', 'ARG', 'URY'], time=range(2010,2015)):
         print(row)
 
     {'value': 3400434, 'series': 'SP.POP.TOTL', 'economy': 'URY', 'aggregate': False, 'time': 'YR2014'}
