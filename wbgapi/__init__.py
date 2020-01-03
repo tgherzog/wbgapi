@@ -84,6 +84,11 @@ def fetch(url, params={}, concepts=False):
     Example:
         for row in wbgapi.fetch('https://api.worldbank.org/countries'):
           print(row['id'], row['name'])
+
+    Notes:
+        For most use cases there are higher level functions that are easier and safer than
+        calling fetch() directly. But it's still very useful for direct testing and discovery
+        of the API.
     '''
 
     params_ = {'per_page': 100}
