@@ -119,7 +119,7 @@ Use `get()` and `list()` to access the underlying objects:
     stuff
     {'SP.POP.TOTL': 'Population, total', 'SI.POV.NAHC': 'Poverty headcount ratio at national poverty lines (% of population)'}
 
-API veterans might notice that the objects use `value` for element names instead of `name`. That's a consequence of the "advanced" queries
+API veterans might notice that the objects use `value` for element names instead of `name`. That's an artifact of the "advanced" queries
 mentioned previously.
 
 Any single identifier or iterable object can be used to select series, economies, regions, and so forth. Here's an easy way to get
