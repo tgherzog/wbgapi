@@ -66,7 +66,7 @@ class Metadata():
         return '\n--------\n'.join(['{}: {}'.format(k, v) for k,v in d.items()]) + '\n'
 
 
-def fetch(url,params={},concepts=False):
+def fetch(url, params={}, concepts=False):
     '''Iterate over an API request with automatic paging.  The API returns a
     variety of response structures depending on the endpoint. fetch() sniffs
     the response structure and return the most appropriate set of iterated objects.
