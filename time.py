@@ -89,7 +89,7 @@ def dimension_name(db=None):
     return t
 
 def queryParam(arg):
-    '''Prepare parameters for an API query
+    '''Prepare parameters for an API query. This function is used internally.
     '''
 
     if type(arg) is str or type(arg) is int:
