@@ -49,15 +49,21 @@ class Metadata():
         self.metadata = {}
 
     def __str__(self):
-        s = '{}: {}\n'.format(self.concept, self.id)
-        for k,v in self.metadata.items():
-            s2 = '{}:\n{}'.format(k, v)
-            s += s2 + '\n'
+        s = '========\n{}: {}\n\n'.format(self.concept, self.id) +  self.meta_report(self.metadata)
+
+        subsets = {'series': 'Economy-Series', 'economies': 'Series-Economy', 'time': 'Series-Time'}
+        for k,v in subsets.items():
+            if hasattr(self, k):
+                s += '========\n{}\n\n'.format(v) + self.meta_report(getattr(self, k))
 
         return s
 
     def __repr__(self):
         return '<[Metadata: [{}-{}]>'.format(self.concept, self.id)
+
+    def meta_report(self,d):
+
+        return '\n--------\n'.join(['{}: {}'.format(k, v) for k,v in d.items()]) + '\n'
 
 
 def fetch(url,params={},concepts=False):
