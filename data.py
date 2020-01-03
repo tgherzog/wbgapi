@@ -6,48 +6,48 @@ except ImportError:
     pd = None
 
 def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, params={}):
-    '''Retrieve API data for the current database
+    '''Retrieve rows of data for the current database
+
     Arguments:
-        series: (required) the series identifier, e.g., SP.POP.TOTL
+        series:             a series identifier or list-like, e.g., SP.POP.TOTL
 
-        economy: country code to select. default=all
+        economy:            an economy identifier or list-like, e.g., 'BRA' or ['USA', 'CAN', 'MEX']
 
-        time: time period to select. default=all
+        time:               a time identifier or list-like, e.g., 'YR2015' or range(2010,2020).
+                            Both element keys and values are acceptable
 
-        mrv:  return only the specified number of most recent values (same time period for all economies)
+        mrv:                return only the specified number of most recent values (same time period for all economies)
 
-        mrnev: return only the specified number of non-empty most recent values (time period varies per country)
+        mrnev:              return only the specified number of non-empty most recent values (time period varies)
 
-        skipBlanks:  set to True to skip empty observations
+        skipBlanks:         skip empty observations
 
-        labels: set to True to include both dimension id and name (e.g., ZWE & Zimbabwe, not just ZWE)
+        labels:             include both dimension id and name (e.g., ZWE & Zimbabwe, not just ZWE)
 
-        skipAggs:    set to True to skip aggregates (return only economies)
+        skipAggs:           skip aggregates
 
-        numericTimeKeys:   store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
+        numericTimeKeys:    store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
 
         params:             extra query parameters to pass to the API
-
-    Notes:
-        series, economy and time can be either scalar strings ('SP.POP.TOTL', 'BRA')
-        or array-like objects (['SP.POP.TOTL', 'NY.GDP.PCAP.CD'], ['BRA', 'ARG'])
-
-        time values can be either keys (e.g., 'YR2014') or values (2014)
 
     Returns:
         A generator object
 
     Examples:
-        # print name and population of all economies
+        # print name and population of all economies for all available years
         for elem in wbgapi.data.fetch('SP.POP.TOTL',labels=True):
-            print elem['economy']['value'], elem['time']['value'], elem['value']
+            print(elem['economy']['value'], elem['time']['value'], elem['value'])
 
         # fetch data for Brazil for odd-numbered years
         for elem in wbgapi.data.fetch('NY.GDP.PCAP.CD', 'BRA', range(2011,2020,2)):
-            print elem['value']
+            print(elem['value'])
+
+        # most recent poverty rates for all LAC countries
+        for elem in wbgapi.data.fetch('SI.POV.NAHC', economy=wb.region.members('LAC'), mrnev=1):
+            print(elem['economy'], elem['time'], elem['value'])
 
         # dict of most recent population data for economies over 100000
-        popData = {elem['economy']: elem['value'] for elem in wbgapi.data.fetch('SP.POP.TOTL', mrnev=1, skipAggs=True) if elem['value'] > 100000}
+        popData = {i['economy']: i['value'] for i in wbgapi.data.fetch('SP.POP.TOTL', mrnev=1, skipAggs=True) if i['value'] > 100000}
         
     '''
 
@@ -93,32 +93,49 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
     '''Retrieve a 2-dimensional pandas dataframe. 
     
     Arguments:
-        series: (required) the series identifier, e.g., SP.POP.TOTL
+        series:             a series identifier or list-like, e.g., SP.POP.TOTL
 
-        economy: country code to select. default=all
+        economy:            an economy identifier or list-like, e.g., 'BRA' or ['USA', 'CAN', 'MEX']
 
-        time: time period to select. default=all
+        time:               a time identifier or list-like, e.g., 'YR2015' or range(2010,2020).
+                            Both element keys and values are acceptable
 
-        axes: a 2-element array specifying the index (row) and column of the dataframe. If 'auto' then
-              the function will choose these for you based on other parameters. This can give somewhat
-              unpredicatable results if multiple series, economies and time periods are passed
+        axes:               a 2-element array specifiying the dimensions to use for the index (row) and column
+                            of the dataframe. If 'auto' then the function will choose for you based on your
+                            request. This works best if at least one of series, economies or time is restricted
+                            to a single value (mrv=1 and mrnev=1 effectively do the same thing).
         
-        mrv:  return only the specified number of most recent values (same time period for all economies)
+        mrv:                return only the specified number of most recent values (same time period for all economies)
 
-        mrnev: return only the specified number of non-empty most recent values (time period varies per country)
+        mrnev:              return only the specified number of non-empty most recent values (time period varies)
 
-        skipBlanks:  set to True to skip empty observations
+        skipBlanks:         skip empty observations
 
-        labels:     include the dimension name for rows
+        labels:             include the dimension name for rows
 
-        slipAggs:   skip aggregates (return only economies)
+        skipAggs:           skip aggregates
 
-        numericTimeKeys:   store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
+        numericTimeKeys:    store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
 
         timeColumns:        add extra columns to show the time dimension for each series/economy
 
         params:             extra query parameters to pass to the API
         
+    Returns:
+        a pandas DataFrame
+
+    Examples:
+        # 5 years of population data (with economy names)
+        wbgapi.data.DataFrame('SP.POP.TOTL, time=range(2010,2020),labels=True)
+
+        # Most recent poverty and income data for LAC
+        wbgapi.data.DataFrame(['SI.POV.NAHC', 'NY.GDP.PCAP.CD'], economy=wb.region.members('LAC'),mrnev=1,timeColumns=True)
+
+        # Fetch most recent CO2 emissions for each country and merge its income group
+        wbgapi.data.DataFrame('EN.ATM.CO2E.PC',mrnev=1).join(wbgapi.economy.DataFrame()['incomeLevel'])
+
+        # Top 10 emitters per capita
+        wbgapi.data.DataFrame('EN.ATM.CO2E.PC',mrnev=1,labels=True).sort_values('EN.ATM.CO2E.PC',ascending=False).head(10)
     '''
 
     if pd is None:
@@ -146,6 +163,8 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
     # for now let's see if it works to build the dataframe dynamically
     df = pd.DataFrame()
     dummy = pd.Series()    # empty series - never assigned actual values
+    # ts_suffix = ':' + w.time.dimension_name().upper()
+    ts_suffix = ':T'
     if labels:
         # create a separate dataframe for labels so that we can control the column position below
         df2 = pd.DataFrame()
@@ -155,7 +174,7 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         if pd.isna(df.get(row[axes[1]]['id'], dummy).get(row[axes[0]]['id'])):
             df.loc[row[axes[0]]['id'], row[axes[1]]['id']] = row['value']
             if timeColumns:
-                df.loc[row[axes[0]]['id'], row[axes[1]]['id'] + ':T'] = row['time']['value']
+                df.loc[row[axes[0]]['id'], row[axes[1]]['id'] + ts_suffix] = row['time']['value']
 
             if labels:
                 df2.loc[row[axes[0]]['id'], 'Label'] = row[axes[0]]['value']
@@ -169,22 +188,65 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         
 
 def get(series, economy, time='all', mrv=None, mrnev=None, labels=False, numericTimeKeys=False):
+    '''Retrieve a single data point for the current database
+
+    Arguments:
+        series:             a series identifier
+
+        economy:            an economy identifier
+
+        time:               a time identifier.  Both element keys and values are acceptable
+
+        mrv:                return only the specified number of most recent values (same time period for all economies)
+
+        mrnev:              return only the specified number of non-empty most recent values (time period varies)
+
+        labels:             include both dimension id and name (e.g., ZWE & Zimbabwe, not just ZWE)
+
+        numericTimeKeys:    store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
+
+    Returns:
+        a data observation
+
+    Notes:
+        This function simply calls fetch() and returns the first result. Hence, you should set mrv or mrnev to 1, or set
+        time to a single value to get predictable results.
+
+    Example:
+        # print the last population estimate for France
+        print(wbgapi.data.get('SP.POP.TOTL', 'FRA', mrnev=1)['value'])
+    '''
 
     for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, labels=labels, numericTimeKeys=numericTimeKeys, params={'per_page': 1}):
         return row
 
 def footnote(series, economy, time):
+    '''Return the footnote for a single data point, if any
 
-    url = '{}/{}/sources/{}/footnote/{}~{}~{}/metadata'.format(w.endpoint, w.lang, w.db, economy, series, time)
+    Arguments:
+        series:             a series identifier
+
+        economy:            an economy identifier
+
+        time:               a time identifier.  Both element keys and values are acceptable
+
+    Returns:
+        footnote text, or None
+
+    Example:
+        print(wbgapi.data.footnote('SP.POP.TOTL', 'FRA', 2015))
+    '''
+
+    url = '{}/{}/sources/{}/footnote/{}~{}~{}/metadata'.format(w.endpoint, w.lang, w.db, economy, series, w.time.queryParam(time))
     try:
         for row in w.metadata(url):
             return row.metadata['FootNote']
     except:
-        raise
+        pass    # will return None then
 
 
 def _request(series, economy='all', time='all', mrv=None, mrnev=None, params={}):
-    '''Return the URL and parameters for data requests
+    '''Internal function: return the URL and parameters for data requests
     '''
 
     params_ = {}

@@ -94,7 +94,7 @@ def DataFrame(id='all',labels=False):
     Arguments:
         id:     an economy identifier or list-like
 
-        labels: Pass True to return classification names instead of their 3-character identifier codes
+        labels: return classification names instead of their 3-character identifier codes
 
     Returns:
         a pandas DataFrame
