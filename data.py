@@ -1,4 +1,7 @@
 
+'''Access World Bank API data
+'''
+
 import wbgapi as w
 try:
     import pandas as pd

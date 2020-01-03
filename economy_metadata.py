@@ -1,20 +1,33 @@
 
+'''Access economy-level metadata
+'''
+
 import wbgapi as w
 
 def fetch(id,series=[],db=None):
-    '''Return metadata for specified series
+    '''Return metadata for the specified economy
 
     Arguments:
-        id:         The series ID or an array of series ID's to return metadata for
+        id:         an economy identifier or list-like
 
-        series:     Optional list of series for which to include series-country metadata
+        series:     optional list of series for which to include series-economy metadata
+                    (NB: this is the same metadata returned by series.metadata.fetch() with
+                    the economies parameter)
+
+        db:         database; pass None to access the global database
 
     Returns:
-        A generator object
+        a generator which generates Metadata objects. If series/economy metadata
+        is requested it will be stored on the 'series' property of the object.
 
     Notes:
         Passing a large series list will be very resource intense and inefficient. It might be
         better to call series.metadata.fetch() with a relatively small list of countries
+
+    Example:
+        for meta = wbgapi.economy.metadata.fetch(['COL', 'BRA']):
+            print(meta)
+        
     '''
 
     pg_size = 50    # large 2-dimensional metadata requests must be paged or the API will barf
@@ -51,6 +64,22 @@ def fetch(id,series=[],db=None):
 
 
 def get(id,series=[], db=None):
+    '''Retrieve a single metadata record
+
+    Arguments:
+        id:         an economy identifier or list-like
+
+        series:     optional list of series for which to include series-country metadata
+
+        db:         database; pass None to access the global database
+
+    Returns:
+        A metadata object. If series/economy metadata is requested it will be stored on the
+        'series' property of the object.
+
+    Example:
+        print(wbgapi.economy.metadata.get('COL'))
+    '''
     
     for row in fetch(id, series, db):
         return row

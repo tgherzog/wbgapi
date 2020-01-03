@@ -1,23 +1,37 @@
 
+'''Access series-level metadata
+'''
+
 import wbgapi as w
 
-def fetch(id,countries=[],time=[],db=None):
+def fetch(id,economies=[],time=[],db=None):
     '''Return metadata for specified series
 
     Arguments:
-        id:         The series ID or an array of series ID's to return metadata for
+        id:         a series identifier or list-like
 
-        countries:  Optional list of countries for which to include series-country metadata
+        economies:  optional list of economies for which to include series-economy metadata
+                    (NB: this is the same metadata returned by economy.metadata.fetch()
+                    with the series parameter)
+
+        time:       optional list of time identifiers for which to include series-time metadata
+
+        db:         database; pass None to access the global database
 
     Returns:
-        A generator object
+        A generator object which generates Metadata objects. If series/economy or series/time
+        metadata are requested they will be stored on the 'economies' and 'time' properties
+
+    Examples:
+        for meta = wbgapi.series.metadata.fetch(['SP.POP.TOTL', 'NY.GDP.PCAP.CD']):
+            print(meta)
     '''
 
     pg_size = 50    # large 2-dimensional metadata requests must be paged or the API will barf
                     # this sets the page size. Seems to work well even for very log CETS identifiers
 
-    if type(countries) is str:
-        countries = [countries]
+    if type(economies) is str:
+        economies = [economies]
 
     if type(time) is str:
         time = [time]
@@ -30,11 +44,11 @@ def fetch(id,countries=[],time=[],db=None):
 
     url = '{}/{}/sources/{}/series/{}/metadata'.format(w.endpoint, w.lang, db, w.queryParam(id))
     for row in w.metadata(url):
-        if countries:
-            row.countries = {}
+        if economies:
+            row.economies = {}
             n = 0
-            while n < len(countries):
-                cs = ';'.join(['{}~{}'.format(elem,row.id) for elem in countries[n:n+pg_size]])
+            while n < len(economies):
+                cs = ';'.join(['{}~{}'.format(elem,row.id) for elem in economies[n:n+pg_size]])
                 n += pg_size
                 url2 = '{}/{}/sources/{}/Country-Series/{}/metadata'.format(w.endpoint, w.lang, db, cs)
 
@@ -42,7 +56,7 @@ def fetch(id,countries=[],time=[],db=None):
                 try:
                     for row2 in w.metadata(url2):
                         # w.metadata should be returning single entry dictionaries here since it pages for each new identifier
-                        row.countries[row2.id.split('~')[0]] = row2.metadata['Country-Series']
+                        row.economies[row2.id.split('~')[0]] = row2.metadata['Country-Series']
                 except:
                     pass
 
@@ -63,7 +77,25 @@ def fetch(id,countries=[],time=[],db=None):
         yield row
 
 
-def get(id,countries=[],time=[],db=None):
+def get(id,economies=[],time=[],db=None):
+    '''Retrieve a single metadata record
+
+    Arguments:
+        id:         a series identifier
+
+        economies:  optional list of economies for which to include series-economy metadata
+
+        time:       optional list of time identifiers for which to include series-time metadata
+
+        db:         database; pass None to access the global database
+
+    Returns:
+        A metadadata object.  If series/economy or series/time metadata are
+        requested they will be stored on the 'economies' and 'time' properties
+
+    Examples:
+        print(wbgapi.series.metadata.get('SP.POP.TOTL'))
+    '''
     
-    for row in fetch(id, countries, time, db):
+    for row in fetch(id, economies, time, db):
         return row
