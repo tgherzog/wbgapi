@@ -33,11 +33,13 @@ _class_data = None
 # translated names of regions and cities. This is keyed by language and code
 _localized_metadata = {}
 
-def list(id='all',labels=False):
+def list(id='all',labels=False,skipAggs=False):
     '''Return a list of economies in the current database
 
     Arguments:
-        id:     an economy identifier or list-like
+        id:         an economy identifier or list-like
+
+        skipAggs:   skip aggregates
 
     Returns:
         a generator object
@@ -52,7 +54,8 @@ def list(id='all',labels=False):
     update_caches()
     for row in w.source.features(dimension_name(), queryParam(id)):
         _build(row,labels)
-        yield row
+        if skipAggs == False or row['aggregate'] == False:
+            yield row
 
 def get(id,labels=False):
     '''Retrieve the specified economy
@@ -214,13 +217,15 @@ def update_caches():
         for row in w.fetch(url):
             _localized_metadata[w.lang]['capitalCity:'+row['id']] = row['capitalCity'].strip()
             
-def info(id='all'):
+def info(id='all',skipAggs=False):
     '''Print a user report of economies
 
     Arguments:
         id:         an economy identifier or list-like
 
+        skipAggs:   skip aggregates
+
     Returns:
         None
     '''
-    w.printInfo(builtins.list(list(id)))
+    w.printInfo(builtins.list(list(id, skipAggs=skipAggs)))
