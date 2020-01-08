@@ -46,6 +46,11 @@ pip to install directly from github:
 
     pip install git+https://github.com/tgherzog/wbgapi.git
 
+If you use Anaconda, you may have to download the package and install it locally:
+
+1. Download this repository as a ZIP file
+2. Run pip like this: `pip install [local-path-to]wbgapi-master.zip`
+
 ## Quick Start ##
 
 Import the module; my preferred namespace is `wb`:
@@ -228,9 +233,9 @@ Hopefully that gives you a taste and enough to get started. Use `help()` and rea
   to move on.
 
 * WBGAPI is fully multi-lingual. However, as of this writing, the API endpoints it depends
-  on are returning English-only. The module returns what the API gives it, regardless of whether
-  the response language matches the request. Hopefully the World Bank can improve its implementation
-  soon.
+  on are returning English-only, which means that in practice the module is English-only as well.
+  Short of some serious hacks which have their own negative consequences, it's not really possible
+  to fix this until the API itself sees some improvements.
 
 * WBGAPI has no built-in caching. However, it makes all its requests through [requests][requests], which
   can be cached via [requests cache][req-cache]
