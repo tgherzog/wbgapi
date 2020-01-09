@@ -92,7 +92,49 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         if not skip:
             yield x
 
-def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, timeColumns=False, params={}):
+def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}):
+    '''Retrieve a flat pandas dataframe (1 row per observation)
+
+    Arguments:
+        series:             a series identifier or list-like, e.g., SP.POP.TOTL
+
+        economy:            an economy identifier or list-like, e.g., 'BRA' or ['USA', 'CAN', 'MEX']
+
+        time:               a time identifier or list-like, e.g., 'YR2015' or range(2010,2020).
+                            Both element keys and values are acceptable
+
+        mrv:                return only the specified number of most recent values (same time period for all economies)
+
+        mrnev:              return only the specified number of non-empty most recent values (time period varies)
+
+        skipBlanks:         skip empty observations
+
+        labels:             return the dimension name instead of the identifier
+
+        skipAggs:           skip aggregates
+
+        params:             extra query parameters to pass to the API
+        
+    Returns:
+        a pandas DataFrame
+
+    Notes:
+        values in the time column are numeric if possible (2015 not 'YR2015')
+    '''
+
+    if pd is None:
+        raise ModuleNotFoundError('you must install pandas to use this feature')
+
+    columns = ['series', 'economy', 'time', 'value']
+    key = 'value' if labels else 'id'
+    df = pd.DataFrame(columns=columns)
+
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, numericTimeKeys=True, skipAggs=skipAggs, params=params):
+        df.loc[len(df)] = [row['series'][key], row['economy'][key], row['time']['id'], row['value']]
+
+    return df
+
+def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, flat=False, numericTimeKeys=False, timeColumns=False, params={}):
     '''Retrieve a 2-dimensional pandas dataframe. 
     
     Arguments:
@@ -107,7 +149,7 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
                             of the dataframe. If 'auto' then the function will choose for you based on your
                             request. This works best if at least one of series, economies or time is restricted
                             to a single value (mrv=1 and mrnev=1 effectively do the same thing).
-        
+
         mrv:                return only the specified number of most recent values (same time period for all economies)
 
         mrnev:              return only the specified number of non-empty most recent values (time period varies)
@@ -117,6 +159,8 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         labels:             include the dimension name for rows
 
         skipAggs:           skip aggregates
+
+        flat:               same as calling FlatFrame()
 
         numericTimeKeys:    store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
 
@@ -140,6 +184,9 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         # Top 10 emitters per capita
         wbgapi.data.DataFrame('EN.ATM.CO2E.PC',mrnev=1,labels=True).sort_values('EN.ATM.CO2E.PC',ascending=False).head(10)
     '''
+
+    if flat:
+        return FlatFrame(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=labels, skipAggs=skipAggs, params=params)
 
     if pd is None:
         raise ModuleNotFoundError('you must install pandas to use this feature')
