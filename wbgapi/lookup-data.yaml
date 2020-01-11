@@ -1,0 +1,98 @@
+# provides alternate matching strings for corresponding ISO3 codes, in addition
+# to strings provided by the API itself. Each string is treated as a case-insensitive regex
+# pattern restricted to word boundaries. In addition, sugar is applied so that
+# 'and' and '&' are equivalent as are 'st' and 'saint'
+#
+# strings beginning with ':' are treated as strings not patterns, and must match the 
+# target text exactly (still case-insensitive)
+#
+# note that in the target string apostrophes are removed and remaining non-alpha characters
+# replaced with spaces
+
+BHS:
+- Bahamas
+BIH:
+- Bosnia Herzegovina
+- Bosnia Hercegovenia
+BRN:
+- Brunei
+CIV:
+- Ivory Coast
+- C..?te dIvoire
+COD:
+- Congo Democratic Republic
+- Democratic Republic of (the )?Congo
+COG:
+- Congo Republic
+- :Congo
+CPV:
+- Cape Verde
+CZE:
+- Czech
+- Czechia
+EGY:
+- Egypt
+FRO:
+- Faroe
+FSM:
+- Micronesia
+GBR:
+- Great Britain
+- :UK
+GMB:
+- Gambia
+HKG:
+- Hong Kong
+IRN:
+- Iran
+KGZ:
+- Kyrgyzstan
+KOR:
+- Korea Republic
+- :Republic of Korea
+- South Korea
+- S Korea
+LAO:
+- Laos
+- Lao
+LCA:
+- Saint Lucia
+MAC:
+- Macao
+MKD:
+- Macedonia
+PRK:
+- Korea Democratic Peoples Republic
+- Democratic Peoples Republic of Korea
+- North Korea
+- N Korea
+PSE:
+- Palestine
+RUS:
+- Russia
+SSD:
+- S Sudan
+SVK:
+- Slovakia
+SWZ:
+- Swaziland
+SYR:
+- Syria
+TWN:
+- Taiwan
+USA:
+- :US
+VEN:
+- Venezuela
+VGB:
+- British Virgin Islands
+- :BVI
+VIR:
+- USVI
+VNM:
+- Viet nam
+YEM:
+- Yemen
+ZAF:
+- South Africa
+- S Africa
