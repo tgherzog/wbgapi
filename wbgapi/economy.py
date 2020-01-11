@@ -16,6 +16,9 @@ to databases that don't adhere to the country-level coding standards.
 import wbgapi as w
 from . import economy_metadata as metadata
 import builtins
+import yaml
+import os
+import re
 try:
     import pandas as pd
 except ImportError:
@@ -91,13 +94,15 @@ def _build(row,labels=False):
                 row[key] = {'id': row[key], 'value': _localized_metadata[w.lang].get(row[key],'')}
 
 
-def DataFrame(id='all',labels=False):
+def DataFrame(id='all',labels=False, skipAggs=False):
     '''Return a pandas DataFrame of economy records
 
     Arguments:
-        id:     an economy identifier or list-like
+        id:         an economy identifier or list-like
 
-        labels: return classification names instead of their 3-character identifier codes
+        labels:     return classification names instead of their 3-character identifier codes
+
+        skipAggs:   skip aggregates
 
     Returns:
         a pandas DataFrame
@@ -113,7 +118,7 @@ def DataFrame(id='all',labels=False):
     df = None
     row_key = 'value' if labels else 'id'
 
-    for row in list(id,labels=True):
+    for row in list(id,labels=True, skipAggs=skipAggs):
         if df is None:
             columns = builtins.list(row.keys())
             columns.remove('id')
@@ -217,6 +222,97 @@ def update_caches():
         for row in w.fetch(url):
             _localized_metadata[w.lang]['capitalCity:'+row['id']] = row['capitalCity'].strip()
             
+_lookup_data = None
+
+def lookup(name):
+    '''Return the country code for a given country name, based on common spellings and conventions.
+    This function is intended to make it easier to convert country names to ISO3 codes.
+
+    This feature is English-only and still in development. You can extend the matching algorithm
+    by editing the `lookup-data.yaml` file.
+
+    Arguments:
+
+        name:       a country name as a string, or an iterable object of name strings
+
+    Returns:
+        If `name` is a string then the function returns the corresponding ISO3 code, or None if the code
+        can't be ascertained.
+
+        If `name` is an iterable object, the function returns a dict of country names (passed as arguments)
+        and corresponding ISO3 codes. Country names that cannot be ascertained have a value of None
+
+    Examples:
+        print(wbgapi.economy.lookup('Eswatini')) # prints 'SWZ'
+
+        print(wbgapi.economy.lookup('Swaziland')) # prints 'SWZ'
+
+        print(wbgapi.economy.lookup(['Canada', 'Toronto']))   # prints {'Canada': 'CAN', 'Toronto': None}
+    '''
+    global _lookup_data
+
+    def prepare(s, clean=False, magicRegex=False):
+
+        s = s.lower()
+        if clean:
+            # should be False if the string is regex-capable
+            s = re.sub(r'\s*\(.*\)', '', s) # remove parenthetical text
+            s = s.replace("'", '')          # remove apostrophes
+            s = re.sub(r'\W', ' ', s)       # convert remaining punctuation to spaces
+
+        s = s.strip()
+
+        if magicRegex:
+            # converts 'and' to (and|&), 'st' to (st|saint)
+            s = re.sub(r'\band\b', r'(and|\&)', s)
+            s = re.sub(r'\bst\b', r'(st|saint)', s)
+            s = re.sub(r'\s+', r'\\s+', s)
+
+        return s
+
+    if _lookup_data is None:
+        _lookup_data = []
+        user_data = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), 'lookup-data.yaml'), 'r'))
+        url = '{}/{}/country/all'.format(w.endpoint, 'en')  # english only for now
+
+        for row in w.fetch(url):
+            if row['region']['id'] == 'NA':
+                continue # ignore aggregates
+
+            _lookup_data.append((row['id'].lower(), row['id'], False))
+            _lookup_data.append((prepare(row['name'], clean=True, magicRegex=True), row['id'], True))
+            for row2 in user_data.get(row['id'],[]):
+                if row2[0:1] == ':':
+                    # treat as an exact case-insensitive string match
+                    _lookup_data.append((row2[1:].lower(), row['id'], False))
+                else:
+                    # treat as a regex string which can match on any word boundary
+                    _lookup_data.append(('\\b{}\\b'.format(prepare(row2, clean=False, magicRegex=True)), row['id'], True))
+
+    if type(name) is str:
+        name = [name]
+        is_list = False
+    else:
+        is_list = True
+
+    results = {}
+    for t in name:
+        match = None
+        t2 = prepare(t, clean=True, magicRegex=False)
+        for pattern,id,mode in _lookup_data:
+            if mode and re.search(pattern, t2):
+                match = id
+            elif not mode and pattern == t2:
+                match = id
+
+            results[t] = match
+
+    if is_list:
+        return results
+
+    return results.get(name[0])
+            
+        
 def info(id='all',skipAggs=False):
     '''Print a user report of economies
 
