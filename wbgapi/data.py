@@ -4,8 +4,10 @@
 
 import wbgapi as w
 try:
+    import numpy as np
     import pandas as pd
 except ImportError:
+    np = None
     pd = None
 
 def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, params={}):
@@ -222,7 +224,7 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
     for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params):
         # this logic only assigns values to locations that don't yet exist. First observations thus take precedent over subsequent ones
         if pd.isna(df.get(row[axes[1]]['id'], dummy).get(row[axes[0]]['id'])):
-            df.loc[row[axes[0]]['id'], row[axes[1]]['id']] = row['value']
+            df.loc[row[axes[0]]['id'], row[axes[1]]['id']] = np.nan if row['value'] is None else row['value']
             if timeColumns:
                 df.loc[row[axes[0]]['id'], row[axes[1]]['id'] + ts_suffix] = row['time']['value']
 

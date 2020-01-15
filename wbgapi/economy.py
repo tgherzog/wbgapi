@@ -20,8 +20,10 @@ import yaml
 import os
 import re
 try:
+    import numpy as np
     import pandas as pd
 except ImportError:
+    np = None
     pd = None
 
 _dimensions = {}
@@ -129,7 +131,7 @@ def DataFrame(id='all',labels=False, skipAggs=False):
         name = row['value']
         del(row['id'])
         del(row['value'])
-        values = map(lambda x: x[row_key] if type(x) is dict else x, builtins.list(row.values()))
+        values = map(lambda x: x[row_key] if type(x) is dict else (np.nan if x is None else x), builtins.list(row.values()))
         df.loc[key] = [name] + builtins.list(values)
 
     return df
