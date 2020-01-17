@@ -22,8 +22,7 @@ def list(id='all',group=None):
     '''
 
     params = {'type': group} if group else {}
-    url = '{}/{}/region/{}'.format(w.endpoint, w.lang, w.queryParam(id))
-    for row in w.fetch(url, params):
+    for row in w.fetch('region/' + w.queryParam(id), params):
         yield row
 
 def get(id):
@@ -40,8 +39,7 @@ def get(id):
     '''
     
     
-    url = '{}/{}/region/{}'.format(w.endpoint, w.lang, w.queryParam(id))
-    return w.get(url)
+    return w.get('region/' + w.queryParam(id))
 
 def members(id,param='region'):
     '''Return a set of economy identifiers that are members of the specified region
@@ -59,8 +57,7 @@ def members(id,param='region'):
     '''
 
     e = set()
-    url = '{}/{}/country'.format(w.endpoint, w.lang)
-    for row in w.fetch(url, {param: id}):
+    for row in w.fetch('country', {param: id}):
         e.add(row['id'])
 
     return e

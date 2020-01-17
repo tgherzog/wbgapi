@@ -42,7 +42,7 @@ def fetch(id,economies=[],time=[],db=None):
     if not w.source.has_metadata(db):
         return None
 
-    url = '{}/{}/sources/{}/series/{}/metadata'.format(w.endpoint, w.lang, db, w.queryParam(id))
+    url = 'sources/{}/series/{}/metadata'.format(db, w.queryParam(id))
     for row in w.metadata(url):
         if economies:
             row.economies = {}
@@ -50,7 +50,7 @@ def fetch(id,economies=[],time=[],db=None):
             while n < len(economies):
                 cs = ';'.join(['{}~{}'.format(elem,row.id) for elem in economies[n:n+pg_size]])
                 n += pg_size
-                url2 = '{}/{}/sources/{}/Country-Series/{}/metadata'.format(w.endpoint, w.lang, db, cs)
+                url2 = 'sources/{}/Country-Series/{}/metadata'.format(db, cs)
 
                 # requests for non-existing data throw malformed responses so we must catch for them
                 try:
@@ -66,7 +66,7 @@ def fetch(id,economies=[],time=[],db=None):
             while n < len(time):
                 st = ';'.join(['{}~{}'.format(row.id,elem) for elem in time[n:n+pg_size]])
                 n += pg_size
-                url2 = '{}/{}/sources/{}/Series-Time/{}/metadata'.format(w.endpoint, w.lang, db, st)
+                url2 = 'sources/{}/Series-Time/{}/metadata'.format(db, st)
 
                 try:
                     for row2 in w.metadata(url2):

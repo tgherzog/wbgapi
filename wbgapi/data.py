@@ -289,7 +289,7 @@ def footnote(series, economy, time):
         print(wbgapi.data.footnote('SP.POP.TOTL', 'FRA', 2015))
     '''
 
-    url = '{}/{}/sources/{}/footnote/{}~{}~{}/metadata'.format(w.endpoint, w.lang, w.db, economy, series, w.time.queryParam(time))
+    url = 'sources/{}/footnote/{}~{}~{}/metadata'.format(w.db, economy, series, w.time.queryParam(time))
     try:
         for row in w.metadata(url):
             return row.metadata['FootNote']
@@ -310,5 +310,5 @@ def _request(series, economy='all', time='all', mrv=None, mrnev=None, params={})
 
     economy_dimension_label = w.economy.dimension_name()
     time_dimension_label = w.time.dimension_name()
-    url = '{}/{}/sources/{}/series/{}/{}/{}/{}/{}'.format(w.endpoint, w.lang, w.db, w.series.queryParam(series), economy_dimension_label, w.economy.queryParam(economy), time_dimension_label, w.time.queryParam(time))
+    url = 'sources/{}/series/{}/{}/{}/{}/{}'.format(w.db, w.series.queryParam(series), economy_dimension_label, w.economy.queryParam(economy), time_dimension_label, w.time.queryParam(time))
     return (url, params_, economy_dimension_label, time_dimension_label)

@@ -66,7 +66,7 @@ class Metadata():
         return '\n--------\n'.join(['{}: {}'.format(k, v) for k,v in d.items()]) + '\n'
 
 
-def fetch(url, params={}, concepts=False):
+def fetch(url, params={}, concepts=False, lang=None):
     '''Iterate over an API request with automatic paging.  The API returns a
     variety of response structures depending on the endpoint. fetch() sniffs
     the response structure and return the most appropriate set of iterated objects.
@@ -78,11 +78,13 @@ def fetch(url, params={}, concepts=False):
 
         concepts:   pass True to return results at the concept level, as opposed to the element/variable level
 
+        lang:       preferred language. Pass none to use the global default
+
     Returns:
         a generator object.
 
     Example:
-        for row in wbgapi.fetch('https://api.worldbank.org/countries'):
+        for row in wbgapi.fetch('countries'):
           print(row['id'], row['name'])
 
     Notes:
@@ -91,17 +93,21 @@ def fetch(url, params={}, concepts=False):
         of the API.
     '''
 
+    global endpoint
+
     params_ = {'per_page': 100}
     params_.update(params)
     params_['page'] = 1
     params_['format'] = 'json'
 
     totalRecords = None
+    if lang is None:
+       lang = globals()['lang']
 
     recordsRead = 0
     while totalRecords is None or recordsRead < totalRecords:
 
-        url_ = '{}?{}'.format(url, urllib.parse.urlencode(params_))
+        url_ = '{}/{}/{}?{}'.format(endpoint, lang, url, urllib.parse.urlencode(params_))
         (hdr,result) = _queryAPI(url_)
 
         if totalRecords is None:
@@ -128,15 +134,17 @@ def get(url,params={},concepts=False):
         First row from the response
 
     Example:
-        print(wbgapi.get('https://api.worldbank.org/countries/BRA')['name'])
+        print(wbgapi.get('countries/BRA')['name'])
     '''
+
+    global endpoint, lang
 
     params_ = params.copy()
     params_['page'] = 1
     params_['format'] = 'json'
     params_['per_page'] = 1
 
-    url_ = url + '?' + urllib.parse.urlencode(params_)
+    url_ = '{}/{}/{}?{}'.format(endpoint, lang, url, urllib.parse.urlencode(params_))
     (hdr,result) = _queryAPI(url_)
     data = _responseObjects(url_, result, wantConcepts=concepts)
     return data[0] if len(data) > 0 else None
@@ -156,7 +164,7 @@ def metadata(url,params={},concepts='all'):
         a generator that returns Metadata objects
 
     Example:
-        for meta in wbgapi.metadata('https://api.worldbank.org/v2/sources/2/series/SP.POP.TOTL/country/FRA;CAN/metadata',
+        for meta in wbgapi.metadata('sources/2/series/SP.POP.TOTL/country/FRA;CAN/metadata',
             concepts=['Series','Country-Series']):
                 print(meta.concept, meta.id, len(meta.metadata))
                 

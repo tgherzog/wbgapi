@@ -185,8 +185,7 @@ def update_caches():
     # update translation data here except city names
     db = {}
     for elem in ['region', 'incomelevel', 'lendingtype']:
-        url = '{}/{}/{}'.format(w.endpoint, w.lang, elem)
-        for row in w.fetch(url):
+        for row in w.fetch(elem):
             if 'name' in row:
                 db[row['code']] = row['name'].strip()
             else:
@@ -196,7 +195,7 @@ def update_caches():
 
     _localized_metadata[w.lang] = db
 
-    url = '{}/{}/country/all'.format(w.endpoint, w.lang)
+    url = 'country/all'
     if type(_class_data) is not dict:
         # initialize objects
         _class_data = {}
@@ -275,9 +274,8 @@ def lookup(name):
     if _lookup_data is None:
         _lookup_data = []
         user_data = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), 'lookup-data.yaml'), 'r'))
-        url = '{}/{}/country/all'.format(w.endpoint, 'en')  # english only for now
 
-        for row in w.fetch(url):
+        for row in w.fetch('country/all', lang='en'):
             if row['region']['id'] == 'NA':
                 continue # ignore aggregates
 

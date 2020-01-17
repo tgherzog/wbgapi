@@ -17,8 +17,7 @@ def list(id='all'):
         lendingGroups = {row['id']: row['value'] for row in wbapi.lending.list()}
     '''
 
-    url = '{}/{}/lendingtype/{}'.format(w.endpoint, w.lang, w.queryParam(id))
-    for row in w.fetch(url):
+    for row in w.fetch('lendingtype/' + w.queryParam(id)):
         yield row
 
 def get(id):
@@ -34,8 +33,7 @@ def get(id):
         print(wbgapi.lending.get('IBD')['value'])
     '''
     
-    url = '{}/{}/lendingtype/{}'.format(w.endpoint, w.lang, w.queryParam(id))
-    return w.get(url)
+    return w.get('lendingtype/' + w.queryParam(id))
 
 def members(id):
     '''Return a set of economy identifiers that are members of the specified lending group

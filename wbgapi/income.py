@@ -17,8 +17,7 @@ def list(id='all'):
         incomeGroups = {row['id']: row['value'] for row in wbapi.income.list()}
     '''
 
-    url = '{}/{}/incomelevel/{}'.format(w.endpoint, w.lang, w.queryParam(id))
-    for row in w.fetch(url):
+    for row in w.fetch('incomelevel/' + w.queryParam(id)):
         yield row
 
 def get(id):
@@ -34,8 +33,7 @@ def get(id):
         print(wbgapi.income.get('LIC')['name'])
     '''
     
-    url = '{}/{}/incomeLevel/{}'.format(w.endpoint, w.lang, w.queryParam(id))
-    return w.get(url)
+    return w.get('incomelevel/' + w.queryParam(id))
 
 def members(id):
     '''Return a set of economy identifiers that are members of the specified income group

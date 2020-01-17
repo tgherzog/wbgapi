@@ -73,7 +73,7 @@ def concepts(db=None):
     if c is not None:
         return c
 
-    url = '{}/{}/sources/{}/concepts'.format(w.endpoint, w.lang, db)
+    url = 'sources/{}/concepts'.format(db)
     c = {}
     for row in w.fetch(url, concepts=True):
         key = urllib.parse.quote(row['id']).lower()
@@ -165,7 +165,7 @@ def _sourceurl(db):
     if db is None:
         db = w.db
 
-    return '{}/{}/sources/{}'.format(w.endpoint, w.lang, db)
+    return 'sources/{}'.format(db)
 
 def _concepturl(concept, id, db):
     '''Internal function: return the URL for fetching database features
@@ -178,6 +178,6 @@ def _concepturl(concept, id, db):
     if concept_list.get(concept) is None:
         return None
 
-    return '{}/{}/sources/{}/{}/{}'.format(w.endpoint, w.lang, db, concept, id)
+    return 'sources/{}/{}/{}'.format(db, concept, id)
 
 

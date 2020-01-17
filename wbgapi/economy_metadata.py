@@ -42,7 +42,7 @@ def fetch(id,series=[],db=None):
     if type(series) is str:
         series = [series]
 
-    url = '{}/{}/sources/{}/country/{}/metadata'.format(w.endpoint, w.lang, db, w.queryParam(id))
+    url = 'sources/{}/country/{}/metadata'.format(db, w.queryParam(id))
     for row in w.metadata(url):
         if series:
             row.series = {}
@@ -50,7 +50,7 @@ def fetch(id,series=[],db=None):
             while n < len(series):
                 cs = ';'.join(['{}~{}'.format(row.id,elem) for elem in series[n:n+pg_size]])
                 n += pg_size
-                url2 = '{}/{}/sources/{}/Country-Series/{}/metadata'.format(w.endpoint, w.lang, db, cs)
+                url2 = 'sources/{}/Country-Series/{}/metadata'.format(db, cs)
 
                 # requests for non-existing data throw malformed responses so we must catch for them
                 try:
