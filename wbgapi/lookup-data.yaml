@@ -37,7 +37,7 @@ FRO:
 FSM:
 - Micronesia
 GIN:
-  order: 99 # Guinea should be dead last
+  order: 99 # defer to 'Guinea Bissau' and 'Equatorial Guinea'
 GBR:
 - Great Britain
 - :UK
@@ -46,8 +46,7 @@ GMB:
 HKG:
 - Hong Kong
 IRL:
-  order: 20
-  patterns: []
+  order: 20 # defer to 'Great Britain and Northern Ireland'
 IRN:
 - Iran
 KGZ:
@@ -78,7 +77,7 @@ PSE:
 RUS:
 - Russia
 SDN:
-  order: 20
+  order: 20 # defer to 'South Sudan'
 SSD:
 - S Sudan
 - Sudan South
