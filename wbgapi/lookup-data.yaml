@@ -64,10 +64,11 @@ LCA:
 - Saint Lucia
 MAC:
 - Macao
+- Macau
 MKD:
 - Macedonia
 PRK:
-- Korea Democratic Peoples Republic
+- Korea Democratic(\s+Peoples)? Republic(\s+of)?
 - Democratic Peoples Republic of Korea
 - North Korea
 - Korea North
@@ -96,10 +97,12 @@ USA:
 VEN:
 - Venezuela
 VGB:
-- British Virgin Islands
+- UK Virgin Islands
+- Virgin Islands UK
 - :BVI
 VIR:
-- USVI
+- US Virgin Islands
+- :USVI
 VNM:
 - Viet nam
 YEM:
