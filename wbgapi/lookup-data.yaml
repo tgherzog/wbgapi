@@ -3,7 +3,7 @@
 # pattern restricted to word boundaries. In addition, sugar is applied so that
 # 'and' and '&' are equivalent as are 'st' and 'saint'
 #
-# strings beginning with ':' are treated as strings not patterns, and must match the 
+# strings beginning with ':' are treated as literal strings not patterns, and must match the 
 # target text exactly (still case-insensitive)
 #
 # note that in the target string apostrophes are removed and remaining non-alpha characters
@@ -18,7 +18,7 @@ BRN:
 - Brunei
 CIV:
 - Ivory Coast
-- C..?te dIvoire
+- C..?te d.?Ivoire
 COD:
 - Congo Democratic Republic
 - Democratic Republic of (the )?Congo
@@ -36,6 +36,8 @@ FRO:
 - Faroe
 FSM:
 - Micronesia
+GIN:
+  order: 99 # Guinea should be dead last
 GBR:
 - Great Britain
 - :UK
@@ -43,6 +45,9 @@ GMB:
 - Gambia
 HKG:
 - Hong Kong
+IRL:
+  order: 20
+  patterns: []
 IRN:
 - Iran
 KGZ:
@@ -51,6 +56,7 @@ KOR:
 - Korea Republic
 - :Republic of Korea
 - South Korea
+- Korea South
 - S Korea
 LAO:
 - Laos
@@ -65,19 +71,25 @@ PRK:
 - Korea Democratic Peoples Republic
 - Democratic Peoples Republic of Korea
 - North Korea
+- Korea North
 - N Korea
 PSE:
 - Palestine
 RUS:
 - Russia
+SDN:
+  order: 20
 SSD:
 - S Sudan
+- Sudan South
 SVK:
 - Slovakia
 SWZ:
 - Swaziland
 SYR:
 - Syria
+TLS:
+- East Timor
 TWN:
 - Taiwan
 USA:

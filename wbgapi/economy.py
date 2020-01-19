@@ -279,15 +279,28 @@ def lookup(name):
             if row['region']['id'] == 'NA':
                 continue # ignore aggregates
 
-            _lookup_data.append((row['id'].lower(), row['id'], False))
-            _lookup_data.append((prepare(row['name'], clean=True, magicRegex=True), row['id'], True))
-            for row2 in user_data.get(row['id'],[]):
+            obj = user_data.get(row['id'], {})
+            # convert ordinary arrays to objects - for most cases this simplifies the yaml
+            if type(obj) is builtins.list:
+                obj = {'patterns': obj}
+
+            try:
+                order = obj.get('order', 10)
+            except:
+                print(obj)
+                raise
+
+            _lookup_data.append((row['id'].lower(), row['id'], False, order))
+            _lookup_data.append(('\\b{}\\b'.format(prepare(row['name'], clean=True, magicRegex=True)), row['id'], True, order))
+            for row2 in obj.get('patterns',[]):
                 if row2[0:1] == ':':
                     # treat as an exact case-insensitive string match
-                    _lookup_data.append((row2[1:].lower(), row['id'], False))
+                    _lookup_data.append((row2[1:].lower(), row['id'], False, order))
                 else:
                     # treat as a regex string which can match on any word boundary
-                    _lookup_data.append(('\\b{}\\b'.format(prepare(row2, clean=False, magicRegex=True)), row['id'], True))
+                    _lookup_data.append(('\\b{}\\b'.format(prepare(row2, clean=False, magicRegex=True)), row['id'], True, order))
+
+        _lookup_data.sort(key=lambda x: x[3])
 
     if type(name) is str:
         name = [name]
@@ -295,17 +308,16 @@ def lookup(name):
     else:
         is_list = True
 
-    results = {}
+    results = {k: None for k in name}
     for t in name:
-        match = None
         t2 = prepare(t, clean=True, magicRegex=False)
-        for pattern,id,mode in _lookup_data:
+        for pattern,id,mode,order in _lookup_data:
             if mode and re.search(pattern, t2):
-                match = id
+                results[t] = id
+                break
             elif not mode and pattern == t2:
-                match = id
-
-            results[t] = match
+                results[t] = id
+                break
 
     if is_list:
         return results
