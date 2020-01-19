@@ -125,17 +125,18 @@ Use `get()` and `list()` to access the underlying objects:
 API veterans might notice that the objects use `value` for element names instead of `name`. That's an artifact of the "advanced" queries
 mentioned previously.
 
-Any single identifier or iterable object can be used to select series, economies, regions, and so forth. Here's an easy way to get
-a list of high-income countries:
+Any single identifier or iterable object can generally be passed as an argument to select series, economies, regions, and so forth.
+Here's an easy way to get a list of high-income countries:
 
     for row in wb.economy.list(wb.region.members('HIC')):
         print(row['value'])
 
 ### Data Requests ###
 
-Again, use `fetch()` for multiple rows of data, and `get()` for single rows:
+Again, use `fetch()` for multiple rows of data, and `get()` for single rows. Python ranges are an easy way to
+indicate which time periods you want.
 
-    # this request fetches data for 3 countries from 2015 onward. Be careful with requests
+    # this request fetches data for 3 countries from 2010-2015. Be careful with requests
     # that omit constraints on economies and/or time as these can take a long time to run
     # and return large numbers of rows
     for row in wb.data.fetch('SP.POP.TOTL', economy=['BRA', 'ARG', 'URY'], time=range(2010,2015)):
@@ -151,8 +152,8 @@ Again, use `fetch()` for multiple rows of data, and `get()` for single rows:
 
 Or if you want the most recent value for every country (omitting aggregates), including both element codes and labels:
 
-    for row in wb.data.fetch('SP.POP.TOTL', mrnev=1,skipAggs=True,labels=True):
-        print(row['economy'], row['value')
+    for row in wb.data.fetch('SP.POP.TOTL', mrnev=1, skipAggs=True, labels=True):
+        print(row['economy'], row['value'])
 
     {'id': 'AFG', 'value': 'Afghanistan', 'aggregate': False} 37172386
     {'id': 'ALB', 'value': 'Albania', 'aggregate': False} 2866376
@@ -162,7 +163,7 @@ Or if you want the most recent value for every country (omitting aggregates), in
 
 ### Pandas ###
 
-You can also return most queries as pandas DataFrames or Series. For example:
+Data and economy queries can be returned as pandas DataFrames. For example:
 
     # data frame of population data for even-numbered years
     wb.data.DataFrame('SP.POP.TOTL', time=range(2010,2020,2),labels=True)
@@ -207,7 +208,7 @@ and can be used with lots of various visualization libraries.
 
 ### Switching databases ###
 
-Use the `source` object to learn about other databases and the `db` variable to change the query targte:
+Use the `source` object to learn about other databases and the `db` variable to change the global database target:
 
     wb.source.info()
     id  name
