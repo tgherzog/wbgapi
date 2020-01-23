@@ -10,7 +10,7 @@ except ImportError:
     np = None
     pd = None
 
-def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, params={}):
+def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, params={}, **dimensions):
     '''Retrieve rows of data for the current database
 
     Arguments:
@@ -35,6 +35,8 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
 
         params:             extra query parameters to pass to the API
 
+        dimensions:         extra dimensions, database specific (e.g., version)
+
     Returns:
         A generator object
 
@@ -56,7 +58,7 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         
     '''
 
-    (url, params_, economy_dimension_label, time_dimension_label) = _request(series, economy, time, mrv, mrnev, params)
+    (url, params_, economy_dimension_label, time_dimension_label) = _request(series, economy, time, mrv, mrnev, params, dimensions)
     aggs = w.economy.aggregates()
 
     for row in w.fetch(url, params_):
@@ -94,7 +96,7 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         if not skip:
             yield x
 
-def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}):
+def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}, **dimensions):
     '''Retrieve a flat pandas dataframe (1 row per observation)
 
     Arguments:
@@ -116,6 +118,8 @@ def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlank
         skipAggs:           skip aggregates
 
         params:             extra query parameters to pass to the API
+
+        dimensions:         extra dimensions, database specific (e.g., version)
         
     Returns:
         a pandas DataFrame
@@ -130,9 +134,16 @@ def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlank
     columns = ['series', 'economy', 'time', 'value']
     key = 'value' if labels else 'id'
     df = pd.DataFrame(columns=columns)
+    df = None
 
-    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, numericTimeKeys=True, skipAggs=skipAggs, params=params):
-        df.loc[len(df)] = [row['series'][key], row['economy'][key], row['time']['id'], row['value']]
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, numericTimeKeys=True, skipAggs=skipAggs, params=params, **dimensions):
+        if df is None:
+            columns = row.keys()
+            df = pd.DataFrame(columns=columns)
+            keys = {i: 'id' if i == 'time' else key for i in columns}
+
+        df.loc[len(df)] = [row[i][keys[i]] if type(row[i]) is dict else row[i] for i in columns]
+        # df.loc[len(df)] = [row['series'][key], row['economy'][key], row['time']['id'], row['value']]
 
     return df
 
@@ -239,7 +250,7 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
     return df
         
 
-def get(series, economy, time='all', mrv=None, mrnev=None, labels=False, numericTimeKeys=False):
+def get(series, economy, time='all', mrv=None, mrnev=None, labels=False, numericTimeKeys=False, **dimensions):
     '''Retrieve a single data point for the current database
 
     Arguments:
@@ -257,6 +268,8 @@ def get(series, economy, time='all', mrv=None, mrnev=None, labels=False, numeric
 
         numericTimeKeys:    store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
 
+        dimensions:         extra dimensions, database specific (e.g., version)
+
     Returns:
         a data observation
 
@@ -269,7 +282,7 @@ def get(series, economy, time='all', mrv=None, mrnev=None, labels=False, numeric
         print(wbgapi.data.get('SP.POP.TOTL', 'FRA', mrnev=1)['value'])
     '''
 
-    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, labels=labels, numericTimeKeys=numericTimeKeys, params={'per_page': 1}):
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, labels=labels, numericTimeKeys=numericTimeKeys, params={'per_page': 1}, **dimensions):
         return row
 
 def footnote(series, economy, time):
@@ -297,7 +310,7 @@ def footnote(series, economy, time):
         pass    # will return None then
 
 
-def _request(series, economy='all', time='all', mrv=None, mrnev=None, params={}):
+def _request(series, economy='all', time='all', mrv=None, mrnev=None, params={}, dimensions={}):
     '''Internal function: return the URL and parameters for data requests
     '''
 
@@ -311,4 +324,12 @@ def _request(series, economy='all', time='all', mrv=None, mrnev=None, params={})
     economy_dimension_label = w.economy.dimension_name()
     time_dimension_label = w.time.dimension_name()
     url = 'sources/{}/series/{}/{}/{}/{}/{}'.format(w.db, w.series.queryParam(series), economy_dimension_label, w.economy.queryParam(economy), time_dimension_label, w.time.queryParam(time))
+    if dimensions:
+        concepts = w.source.concepts()
+        for k,v in dimensions.items():
+            if k not in concepts:
+                raise KeyError('{} is not a concept in the current database'.format(k))
+
+            url += '/{}/{}'.format(k, w.queryParam(v, concept=k))
+
     return (url, params_, economy_dimension_label, time_dimension_label)

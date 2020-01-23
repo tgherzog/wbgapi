@@ -259,7 +259,9 @@ def _queryAPI(url):
 
     return (hdr, result)
 
-def queryParam(arg):
+_latest_concept_cache = {}
+
+def queryParam(arg, concept=None):
     ''' Prepare parameters for an API query. This is a core function
     called by several dimension-specific functions of the same name
 
@@ -270,6 +272,18 @@ def queryParam(arg):
         a semicolon separated API-ready parameter string
     '''
 
+    if arg == 'mrv' and concept:
+        global _latest_concept_cache, db
+
+        if _latest_concept_cache.get(db) is None:
+            _latest_concept_cache[db] = {}
+
+        if _latest_concept_cache[db].get(concept) is None:
+            for row in source.features(concept):
+                _latest_concept_cache[db][concept] = row['id']
+
+        arg = _latest_concept_cache[db].get(concept, '')
+        
     if type(arg) is str or type(arg) is int:
         return str(arg)
 
