@@ -20,7 +20,7 @@ def list(id='all'):
             print(elem['id'], elem['value'])
 
     '''
-    return w.source.features('series', queryParam(id))
+    return w.source.features('series', w.queryParam(id, 'series'))
 
 def get(id):
     '''Retrieve a specific series object
@@ -36,12 +36,6 @@ def get(id):
     '''
 
     return w.source.feature('series', id)
-
-def queryParam(arg):
-    '''Prepare parameters for an API query. This function is used internally.
-    '''
-
-    return w.queryParam(arg)
 
 def info(id='all'):
     '''Print a user report of series. This can be time consuming

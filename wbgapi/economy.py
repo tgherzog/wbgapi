@@ -56,7 +56,7 @@ def list(id='all',labels=False,skipAggs=False):
     global _class_data
 
     update_caches()
-    for row in w.source.features(dimension_name(), queryParam(id)):
+    for row in w.source.features(dimension_name(), w.queryParam(id, 'economy')):
         _build(row,labels)
         if skipAggs == False or row['aggregate'] == False:
             yield row
@@ -154,12 +154,6 @@ def dimension_name(db=None):
                 break
 
     return t
-
-def queryParam(arg):
-    '''Prepare parameters for an API query. This function is used internally.
-    '''
-
-    return w.queryParam(arg)
 
 def aggregates():
     '''Returns a set object with both the 2-character and 3-character codes

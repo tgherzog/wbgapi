@@ -268,6 +268,8 @@ def queryParam(arg, concept=None):
     Arguments:
         arg:        a record identifier or list-like of identifiers
 
+        concept:    concept for the arguments passed
+
     Returns:
         a semicolon separated API-ready parameter string
     '''
@@ -286,6 +288,10 @@ def queryParam(arg, concept=None):
         
     if type(arg) is str or type(arg) is int:
         return str(arg)
+
+    if concept == 'time':
+        v = time.periods()
+        return ';'.join(map(lambda x: str(v.get(str(x),x)), arg))
 
     # this will throw an exception if arg is not iterable, which is what we want it to do
     return ';'.join(map(lambda x:str(x), arg))

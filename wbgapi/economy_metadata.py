@@ -42,7 +42,7 @@ def fetch(id,series=[],db=None):
     if type(series) is str:
         series = [series]
 
-    url = 'sources/{}/country/{}/metadata'.format(db, w.queryParam(id))
+    url = 'sources/{}/country/{}/metadata'.format(db, w.queryParam(id, 'economy'))
     for row in w.metadata(url):
         if series:
             row.series = {}

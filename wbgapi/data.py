@@ -131,19 +131,17 @@ def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlank
     if pd is None:
         raise ModuleNotFoundError('you must install pandas to use this feature')
 
-    columns = ['series', 'economy', 'time', 'value']
     key = 'value' if labels else 'id'
-    df = pd.DataFrame(columns=columns)
     df = None
 
     for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, numericTimeKeys=True, skipAggs=skipAggs, params=params, **dimensions):
         if df is None:
+            # this assumes that the API returns the same object structure in every row, so we can use the first as a template
             columns = row.keys()
             df = pd.DataFrame(columns=columns)
             keys = {i: 'id' if i == 'time' else key for i in columns}
 
         df.loc[len(df)] = [row[i][keys[i]] if type(row[i]) is dict else row[i] for i in columns]
-        # df.loc[len(df)] = [row['series'][key], row['economy'][key], row['time']['id'], row['value']]
 
     return df
 
@@ -206,11 +204,11 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
 
     if type(axes) is str and axes == 'auto':
         axes = ['economy', 'series', 'time']
-        if mrv == 1 or mrnev == 1 or (time != 'all' and len(w.time.queryParam(time).split(';')) == 1):
+        if mrv == 1 or mrnev == 1 or (time != 'all' and len(w.queryParam(time, 'time').split(';')) == 1):
             axes.remove('time')
-        elif len(w.series.queryParam(series).split(';')) == 1:
+        elif len(w.queryParam(series, 'series').split(';')) == 1:
             axes.remove('series')
-        elif economy != 'all' and len(w.economy.queryParam(economy).split(';')) == 1:
+        elif economy != 'all' and len(w.queryParam(economy, 'economy').split(';')) == 1:
             axes.remove('economy')
         else:
             del(axes[2])
@@ -302,7 +300,7 @@ def footnote(series, economy, time):
         print(wbgapi.data.footnote('SP.POP.TOTL', 'FRA', 2015))
     '''
 
-    url = 'sources/{}/footnote/{}~{}~{}/metadata'.format(w.db, economy, series, w.time.queryParam(time))
+    url = 'sources/{}/footnote/{}~{}~{}/metadata'.format(w.db, economy, series, w.queryParam(time, 'time'))
     try:
         for row in w.metadata(url):
             return row.metadata['FootNote']
@@ -323,7 +321,7 @@ def _request(series, economy='all', time='all', mrv=None, mrnev=None, params={},
 
     economy_dimension_label = w.economy.dimension_name()
     time_dimension_label = w.time.dimension_name()
-    url = 'sources/{}/series/{}/{}/{}/{}/{}'.format(w.db, w.series.queryParam(series), economy_dimension_label, w.economy.queryParam(economy), time_dimension_label, w.time.queryParam(time))
+    url = 'sources/{}/series/{}/{}/{}/{}/{}'.format(w.db, w.queryParam(series, 'series'), economy_dimension_label, w.queryParam(economy, 'economy'), time_dimension_label, w.queryParam(time, 'time'))
     if dimensions:
         concepts = w.source.concepts()
         for k,v in dimensions.items():

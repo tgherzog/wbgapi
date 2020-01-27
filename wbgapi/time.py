@@ -31,7 +31,7 @@ def list(id='all'):
             print(elem['id'], elem['value'])
     '''
 
-    return w.source.features(dimension_name(), queryParam(id))
+    return w.source.features(dimension_name(), w.queryParam(id, 'time'))
 
 def get(id):
     '''Retrieve the specified time element
@@ -46,7 +46,7 @@ def get(id):
         print(wbgapi.time.get('YR2015')['value'])
     '''
 
-    return w.source.feature(dimension_name(), queryParam(id))
+    return w.source.feature(dimension_name(), w.queryParam(id, 'time'))
 
     
 def periods():
@@ -87,16 +87,6 @@ def dimension_name(db=None):
                 break
 
     return t
-
-def queryParam(arg):
-    '''Prepare parameters for an API query. This function is used internally.
-    '''
-
-    if type(arg) is str or type(arg) is int:
-        arg = [arg]
-
-    v = periods()
-    return ';'.join(map(lambda x: str(v.get(str(x),x)), arg))
 
 def info(id='all'):
     '''Print a user report of time features

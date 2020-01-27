@@ -42,7 +42,7 @@ def fetch(id,economies=[],time=[],db=None):
     if not w.source.has_metadata(db):
         return None
 
-    url = 'sources/{}/series/{}/metadata'.format(db, w.queryParam(id))
+    url = 'sources/{}/series/{}/metadata'.format(db, w.queryParam(id, 'series'))
     for row in w.metadata(url):
         if economies:
             row.economies = {}
