@@ -6,6 +6,7 @@ metadata API with built-in pandas integration
 import urllib.parse
 from functools import reduce
 import requests
+from tabulate import tabulate
 from . import series
 from . import source
 from . import economy
@@ -79,6 +80,15 @@ class Featureset():
 
         s += '{}    {} elements\n'.format(' ' * maxKey, len(self.items))
         return s
+
+    def _repr_html_(self):
+
+        rows = []
+        for row in self.items:
+            rows.append([row[self.key], row[self.value]])
+
+        return '<div>' + tabulate(rows, tablefmt='html', headers=[self.key, self.value]) + '</div>'
+
 
 def fetch(url, params={}, concepts=False, lang=None):
     '''Iterate over an API request with automatic paging.  The API returns a
