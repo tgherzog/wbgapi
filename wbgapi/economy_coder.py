@@ -7,7 +7,7 @@ import wbgapi as w
 import yaml
 import os
 import re
-from functools import reduce
+import functools
 
 _lookup_data = None
 
@@ -136,8 +136,8 @@ def report(economies):
 
         rows.append((k, wb_name, v))
 
-    maxName1 = len( reduce(lambda a,b: a if len(a) > len(b) else b, [row[0] for row in rows]) )
-    maxName2 = len( reduce(lambda a,b: a if len(a) > len(b) else b, [row[1] for row in rows]) )
+    maxName1 = len( functools.reduce(lambda a,b: a if len(a) > len(b) else b, [row[0] for row in rows]) )
+    maxName2 = len( functools.reduce(lambda a,b: a if len(a) > len(b) else b, [row[1] for row in rows]) )
 
     for row in rows:
         print('{col1:{len1}}  {col2:{len2}}  {col3}'.format(col1=row[0], len1=maxName1, col2=row[1], len2=maxName2, col3=row[2]))

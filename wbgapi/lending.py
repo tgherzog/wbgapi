@@ -74,4 +74,4 @@ def info(id='all'):
         None
     '''
 
-    w.printInfo(builtins.list(list(id)))
+    return w.Featureset(list(id))

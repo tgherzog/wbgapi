@@ -61,6 +61,24 @@ class Metadata():
 
         return '\n--------\n'.join(['{}: {}'.format(k, v) for k,v in d.items()]) + '\n'
 
+class Featureset():
+    def __init__(self, items, key='id', value='value'):
+        ''' can be initialized with any iterable
+        '''
+
+        self.items = list(items)
+        self.key = key
+        self.value = value
+
+    def __repr__(self):
+
+        maxKey = len( reduce(lambda a,b: a if len(a) > len(b) else b, [row[self.key] for row in self.items]) )
+        s = '{:{}}    {}\n'.format(self.key, maxKey, self.value)
+        for row in self.items:
+             s += '{:{}}    {}\n'.format(row[self.key], maxKey, row[self.value])
+
+        s += '{}    {} elements\n'.format(' ' * maxKey, len(self.items))
+        return s
 
 def fetch(url, params={}, concepts=False, lang=None):
     '''Iterate over an API request with automatic paging.  The API returns a

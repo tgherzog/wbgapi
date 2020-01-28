@@ -83,8 +83,9 @@ def _build(row,labels=False):
     '''utility function to build an economy record from API and cached data
     '''
 
-    global _class_data, _localized_metadata
+    global _class_data, _localized_metadata, _aggs
 
+    row['aggregate'] = row['id'] in _aggs
     cd = _class_data.get(row['id'])
     if cd:
         row.update(_class_data[row['id']])
@@ -207,4 +208,5 @@ def info(id='all',skipAggs=False):
     Returns:
         None
     '''
-    w.printInfo(builtins.list(list(id, skipAggs=skipAggs)))
+
+    return w.Featureset(list(id, skipAggs=skipAggs))
