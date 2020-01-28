@@ -25,10 +25,6 @@ endpoint = 'https://api.worldbank.org/v2'
 lang = 'en'
 db = 2
 
-# these are treated as system constants. Change at your own risk (and why would you?)
-economy_key = 'economy' # used to map a database's economy dimension to a standard constant
-time_key    = 'time'    # used to map a databases time dimension
-
 class APIError(Exception):
   def __init__(self,url,msg,code=None):
     self.msg  = msg

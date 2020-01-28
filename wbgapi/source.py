@@ -49,8 +49,7 @@ def get(db=None):
     return w.get(_sourceurl(db), {'databid': 'y'})
 
 def concepts(db=None):
-    '''Retrieve the concepts for the specified database. This is primarily
-    used internally to provide a consistent interface
+    '''Retrieve the concepts for the specified database.
 
     Arguments:
         db:     the database ID (e.g., 2=WDI). Default to the global database
@@ -60,7 +59,7 @@ def concepts(db=None):
 
     Example:
         for k,v in wbgapi.source.concepts(2).items():
-            print(k, v)
+            print(k, v['key'], v['value'])
     '''
 
     global _concepts
@@ -77,7 +76,13 @@ def concepts(db=None):
     c = {}
     for row in w.fetch(url, concepts=True):
         key = urllib.parse.quote(row['id']).lower()
-        c[key] = row['value']
+        if key in ['country', 'economy', 'admin%20region', 'states', 'provinces']:
+            id = 'economy'
+        elif key in ['time', 'year']:
+            id = 'time'
+        else:
+            id = key
+        c[id] = {'key': key, 'value': row['value']}
 
     _concepts[db] = c
     return c
@@ -174,10 +179,5 @@ def _concepturl(concept, id, db):
     if db is None:
         db = w.db
 
-    concept_list = concepts(db)
-    if concept_list.get(concept) is None:
-        return None
-
-    return 'sources/{}/{}/{}'.format(db, concept, id)
-
+    return 'sources/{}/{}/{}'.format(db, concepts(db)[concept]['key'], id)
 

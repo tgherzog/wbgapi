@@ -58,7 +58,26 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         
     '''
 
-    (url, params_, economy_dimension_label, time_dimension_label) = _request(series, economy, time, mrv, mrnev, params, dimensions)
+    concepts = w.source.concepts(w.db)
+    concept_keys = {v['key']: k for k,v in concepts.items()}
+    params_ = {}
+    params_.update(params)
+    if mrv:
+        params_['mrv'] = mrv
+    elif mrnev:
+        params_['mrnev'] = mrnev
+
+    # you can thus pass series, economy, and time in the dimensions array, and those will overwrite the explicit parameters
+    dimensions_ = {'series': series, 'economy': economy, 'time': time}
+    dimensions_.update(dimensions)
+
+    url = 'sources/{}'.format(w.db)
+    for k,v in dimensions_.items():
+        if k not in concepts:
+            raise KeyError('{} is not a concept in database {}'.format(k, w.db))
+
+        url += '/{}/{}'.format(concepts[k]['key'], w.queryParam(v, concept=k))
+
     aggs = w.economy.aggregates()
 
     for row in w.fetch(url, params_):
@@ -69,28 +88,24 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
 
         x = {'value': row['value']}
         for elem in row['variable']:
-            key = elem['concept'].lower()
-            if key == economy_dimension_label:
-                key = w.economy_key
-                if skipAggs and elem['id'] in aggs:
-                    skip = True
-                    break
-            elif key == time_dimension_label:
-                key = w.time_key
+            key = concept_keys[elem['concept'].lower()]
+            if key == 'economy' and skipAggs and elem['id'] in aggs:
+                skip = True
+                break
 
             if not skip:
                 if labels:
                     del(elem['concept'])
                     x[key] = elem
-                    if key == w.economy_key:
+                    if key == 'economy':
                         x[key]['aggregate'] = elem['id'] in aggs
-                    elif key == w.time_key and numericTimeKeys and elem['value'].isdigit():
+                    elif key == 'time' and numericTimeKeys and elem['value'].isdigit():
                         x[key]['id'] = int(elem['value'])
                 else:
                     x[key] = elem['id']
-                    if key == w.economy_key:
+                    if key == 'economy':
                         x['aggregate'] = elem['id'] in aggs
-                    elif key == w.time_key and numericTimeKeys and elem['value'].isdigit():
+                    elif key == 'time' and numericTimeKeys and elem['value'].isdigit():
                         x[key] = int(elem['value'])
 
         if not skip:
@@ -224,7 +239,6 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
     # for now let's see if it works to build the dataframe dynamically
     df = pd.DataFrame()
     dummy = pd.Series()    # empty series - never assigned actual values
-    # ts_suffix = ':' + w.time.dimension_name().upper()
     ts_suffix = ':T'
     if labels:
         # create a separate dataframe for labels so that we can control the column position below
@@ -233,12 +247,14 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
     for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params):
         # this logic only assigns values to locations that don't yet exist. First observations thus take precedent over subsequent ones
         if pd.isna(df.get(row[axes[1]]['id'], dummy).get(row[axes[0]]['id'])):
-            df.loc[row[axes[0]]['id'], row[axes[1]]['id']] = np.nan if row['value'] is None else row['value']
+            column_key = row[axes[1]]['id']
+            index_key  = row[axes[0]]['id']
+            df.loc[index_key, column_key] = np.nan if row['value'] is None else row['value']
             if timeColumns:
-                df.loc[row[axes[0]]['id'], row[axes[1]]['id'] + ts_suffix] = row['time']['value']
+                df.loc[index_key, column_key + ts_suffix] = row['time']['value']
 
             if labels:
-                df2.loc[row[axes[0]]['id'], 'Label'] = row[axes[0]]['value']
+                df2.loc[index_key, 'Label'] = row[axes[0]]['value']
         
     df.sort_index(axis=0,inplace=True)
     df.sort_index(axis=1,inplace=True)
@@ -307,27 +323,3 @@ def footnote(series, economy, time):
     except:
         pass    # will return None then
 
-
-def _request(series, economy='all', time='all', mrv=None, mrnev=None, params={}, dimensions={}):
-    '''Internal function: return the URL and parameters for data requests
-    '''
-
-    params_ = {}
-    params_.update(params)
-    if mrv:
-        params_['mrv'] = mrv
-    elif mrnev:
-        params_['mrnev'] = mrnev
-
-    economy_dimension_label = w.economy.dimension_name()
-    time_dimension_label = w.time.dimension_name()
-    url = 'sources/{}/series/{}/{}/{}/{}/{}'.format(w.db, w.queryParam(series, 'series'), economy_dimension_label, w.queryParam(economy, 'economy'), time_dimension_label, w.queryParam(time, 'time'))
-    if dimensions:
-        concepts = w.source.concepts()
-        for k,v in dimensions.items():
-            if k not in concepts:
-                raise KeyError('{} is not a concept in the current database'.format(k))
-
-            url += '/{}/{}'.format(k, w.queryParam(v, concept=k))
-
-    return (url, params_, economy_dimension_label, time_dimension_label)

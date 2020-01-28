@@ -25,7 +25,6 @@ except ImportError:
     np = None
     pd = None
 
-_dimensions = {}
 _aggs = None
 
 # a dict of ISO2 code equivalents, if we ever need this
@@ -56,7 +55,7 @@ def list(id='all',labels=False,skipAggs=False):
     global _class_data
 
     update_caches()
-    for row in w.source.features(dimension_name(), w.queryParam(id, 'economy')):
+    for row in w.source.features('economy', w.queryParam(id, 'economy')):
         _build(row,labels)
         if skipAggs == False or row['aggregate'] == False:
             yield row
@@ -75,7 +74,7 @@ def get(id,labels=False):
     '''
 
     update_caches()
-    row = w.source.feature(dimension_name(), id)
+    row = w.source.feature('economy', id)
     _build(row,labels)
     return row
 
@@ -134,26 +133,6 @@ def DataFrame(id='all',labels=False, skipAggs=False):
         df.loc[key] = [name] + builtins.list(values)
 
     return df
-
-def dimension_name(db=None):
-    '''Helper function to discern the API name of the economy dimension. This varies by database
-    '''
-
-    if db is None:
-        db = w.db
-
-    global _dimensions
-
-    t = _dimensions.get(db)
-    if t is None:
-        concepts = builtins.list(w.source.concepts(db))
-        for elem in ['country', 'economy', 'admin%20region', 'states', 'provinces']:
-            if elem in concepts:
-                t = elem
-                _dimensions[db] = t
-                break
-
-    return t
 
 def aggregates():
     '''Returns a set object with both the 2-character and 3-character codes

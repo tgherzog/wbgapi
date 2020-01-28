@@ -14,8 +14,6 @@ import builtins
 # this is an array of reverse value lookup tables
 _time_values = {}
 
-_dimensions = {}
-
 def list(id='all'):
     '''Return a list of time elements in the current database
 
@@ -31,7 +29,7 @@ def list(id='all'):
             print(elem['id'], elem['value'])
     '''
 
-    return w.source.features(dimension_name(), w.queryParam(id, 'time'))
+    return w.source.features('time', w.queryParam(id, 'time'))
 
 def get(id):
     '''Retrieve the specified time element
@@ -46,7 +44,7 @@ def get(id):
         print(wbgapi.time.get('YR2015')['value'])
     '''
 
-    return w.source.feature(dimension_name(), w.queryParam(id, 'time'))
+    return w.source.feature('time', w.queryParam(id, 'time'))
 
     
 def periods():
@@ -58,35 +56,12 @@ def periods():
     v = _time_values.get(w.db)
     if v is None:
         v = {}
-        for row in w.source.features(dimension_name(), 'all'):
+        for row in w.source.features('time', 'all'):
             v[row['value']] = row['id']
 
         _time_values[w.db] = v
 
     return v
-
-def dimension_name(db=None):
-    '''Helper function to discern the API name of the time dimension for the specified database
-
-    Arguments:
-        db:     a database identifier; pass None to use the global database
-    '''
-
-    if db is None:
-        db = w.db
-
-    global _dimensions
-
-    t = _dimensions.get(db)
-    if t is None:
-        concepts = builtins.list(w.source.concepts(db))
-        for elem in ['time', 'year']:
-            if elem in concepts:
-                t = elem
-                _dimensions[db] = t
-                break
-
-    return t
 
 def info(id='all'):
     '''Print a user report of time features
