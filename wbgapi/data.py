@@ -160,7 +160,7 @@ def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlank
 
     return df
 
-def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, flat=False, numericTimeKeys=False, timeColumns=False, params={}):
+def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, flat=False, numericTimeKeys=False, timeColumns=False, params={}, **dimensions):
     '''Retrieve a 2-dimensional pandas dataframe. 
     
     Arguments:
@@ -193,6 +193,8 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         timeColumns:        add extra columns to show the time dimension for each series/economy
 
         params:             extra query parameters to pass to the API
+
+        dimensions:         extra dimensions, database specific (e.g., version)
         
     Returns:
         a pandas DataFrame
@@ -211,55 +213,82 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         wbgapi.data.DataFrame('EN.ATM.CO2E.PC',mrnev=1,labels=True).sort_values('EN.ATM.CO2E.PC',ascending=False).head(10)
     '''
 
+    def frame(axes):
+
+        if len(axes) > 2:
+            i = [[]] * (len(axes)-1)
+            return pd.DataFrame(index=pd.MultiIndex(levels=i, codes=i))
+
+        return pd.DataFrame()
+
+    def is_single(x):
+
+        if type(x) is str and x == 'all':
+            return False
+
+        return len(w.queryParam(x).split(';')) == 1
+
+
     if flat:
-        return FlatFrame(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=labels, skipAggs=skipAggs, params=params)
+        return FlatFrame(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=labels, skipAggs=skipAggs, params=params, **dimensions)
 
     if pd is None:
         raise ModuleNotFoundError('you must install pandas to use this feature')
 
     if type(axes) is str and axes == 'auto':
         axes = ['economy', 'series', 'time']
-        if mrv == 1 or mrnev == 1 or (time != 'all' and len(w.queryParam(time, 'time').split(';')) == 1):
-            axes.remove('time')
-        elif len(w.queryParam(series, 'series').split(';')) == 1:
-            axes.remove('series')
-        elif economy != 'all' and len(w.queryParam(economy, 'economy').split(';')) == 1:
-            axes.remove('economy')
-        else:
-            del(axes[2])
+        for k,v in w.source.concepts().items():
+            if k not in axes:
+                axes.insert(0, k)
 
-    t = set(axes)
-    if len(t) != 2 or t - set(['economy', 'series', 'time']):
-        raise ValueError('axes must be \'auto\' or exactly 2 of economy, series, time')
+        dimensions_ = {'series': series, 'economy': economy, 'time': time}
+        dimensions_.update(dimensions)
+
+        x = axes.copy()
+        x.reverse()
+        for k in x:
+            if len(axes) == 2:
+                break
+
+            if k == 'time' and (mrv == 1 or mrnev == 1 or is_single(dimensions_[k])):
+                axes.remove(k)
+            elif is_single(dimensions_[k]):
+                axes.remove(k)
 
     # sanity check: don't include time column if it's a dimension
     if 'time' in axes:
         timeColumns = False
 
     # for now let's see if it works to build the dataframe dynamically
-    df = pd.DataFrame()
+    df = frame(axes)
     dummy = pd.Series()    # empty series - never assigned actual values
     ts_suffix = ':T'
+    concepts = w.source.concepts()
     if labels:
         # create a separate dataframe for labels so that we can control the column position below
-        df2 = pd.DataFrame()
+        df2 = frame(axes)
 
-    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params):
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params, **dimensions):
+        column_key = row[axes[-1]]['id']
+        if len(axes) == 2:
+            index_key = row[axes[0]]['id']
+        else:
+            index_key = tuple(map(lambda x: row[x]['id'], axes[0:-1]))
+
         # this logic only assigns values to locations that don't yet exist. First observations thus take precedent over subsequent ones
-        if pd.isna(df.get(row[axes[1]]['id'], dummy).get(row[axes[0]]['id'])):
-            column_key = row[axes[1]]['id']
-            index_key  = row[axes[0]]['id']
+        if pd.isna(df.get(column_key, dummy).get(index_key)):
             df.loc[index_key, column_key] = np.nan if row['value'] is None else row['value']
             if timeColumns:
                 df.loc[index_key, column_key + ts_suffix] = row['time']['value']
 
             if labels:
-                df2.loc[index_key, 'Label'] = row[axes[0]]['value']
+                for i in axes[0:-1]:
+                    df2.loc[index_key, concepts[i]['value']] = row[i]['value']
         
     df.sort_index(axis=0,inplace=True)
     df.sort_index(axis=1,inplace=True)
     if labels:
-        return pd.concat([df2,df], axis=1,sort=True)
+        return pd.concat([df2,df], axis=1)
         
     return df
         

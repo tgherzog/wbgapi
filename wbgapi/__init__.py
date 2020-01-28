@@ -55,7 +55,7 @@ class Metadata():
         return s
 
     def __repr__(self):
-        return '<[Metadata: [{}-{}]>'.format(self.concept, self.id)
+        return self.__str__()
 
     def meta_report(self,d):
 
@@ -270,7 +270,7 @@ def queryParam(arg, concept=None):
         a semicolon separated API-ready parameter string
     '''
 
-    if arg == 'mrv' and concept:
+    if type(arg) is str and arg == 'mrv' and concept:
         global _latest_concept_cache, db
 
         if _latest_concept_cache.get(db) is None:
@@ -292,7 +292,7 @@ def queryParam(arg, concept=None):
     # this will throw an exception if arg is not iterable, which is what we want it to do
     return ';'.join(map(lambda x:str(x), arg))
 
-def pandasSeries(data, key='id',value='value',name='value'):
+def pandasSeries(data, key='id',value='value',name=None):
     '''Convert an object array to a pandas Series object. This core function is
     called by several dimension-specific implementation functions
 
@@ -303,7 +303,7 @@ def pandasSeries(data, key='id',value='value',name='value'):
 
         value:      field for the Series column values
 
-        name:       Series column name
+        name:       Series column name. If None, same as value
 
     Returns:
         a pandas Series object
@@ -312,6 +312,9 @@ def pandasSeries(data, key='id',value='value',name='value'):
     
     if pd is None:
         raise ModuleNotFoundError('you must install pandas to use this feature')
+
+    if name is None:
+        name = value
 
     return pd.Series({row[key]: row[value] for row in data}, name=name)
 
