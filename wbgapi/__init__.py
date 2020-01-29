@@ -61,8 +61,12 @@ class Metadata():
 
     def _repr_html_(self):
 
-        def segment(concept, meta):
-            s = '<h4>{}</h4>'.format(concept)
+        def segment(concept, meta, id=None):
+            if id:
+                s = '<h4>{}: {}</h4>'.format(concept, id)
+            else:
+                s = '<h5>{}</h5>'.format(concept)
+
             rows = []
             for k,v in meta.items():
                 rows.append([k, v])
@@ -70,7 +74,7 @@ class Metadata():
             # here we don't call htmlTable because we wrap the entire output in a <div/>
             return s + tabulate(rows, tablefmt='html', headers=['field', 'value'])
 
-        s = '<div class="wbgapi">' + segment(self.concept, self.metadata)
+        s = '<div class="wbgapi">' + segment(self.concept, self.metadata, id=self.id)
         subsets = {'series': 'Economy-Series', 'economies': 'Series-Economy', 'time': 'Series-Time'}
         for k,v in subsets.items():
             if hasattr(self, k):
