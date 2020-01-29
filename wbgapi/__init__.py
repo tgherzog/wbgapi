@@ -45,18 +45,39 @@ class Metadata():
         self.id = id
         self.metadata = {}
 
-    def __str__(self):
-        s = '========\n{}: {}\n\n'.format(self.concept, self.id) +  self.meta_report(self.metadata)
+    def __repr__(self):
+
+        def segment(d):
+            return '\n--------\n'.join(['{}: {}'.format(k, v) for k,v in d.items()]) + '\n'
+            
+        s = '========\n{}: {}\n\n'.format(self.concept, self.id) +  segment(self.metadata)
 
         subsets = {'series': 'Economy-Series', 'economies': 'Series-Economy', 'time': 'Series-Time'}
         for k,v in subsets.items():
             if hasattr(self, k):
-                s += '========\n{}\n\n'.format(v) + self.meta_report(getattr(self, k))
+                s += '========\n{}\n\n'.format(v) + segment(getattr(self, k))
 
         return s
 
-    def __repr__(self):
-        return self.__str__()
+    def _repr_html_(self):
+
+        def segment(concept, meta):
+            s = '<h4>{}</h4>'.format(concept)
+            rows = []
+            for k,v in meta.items():
+                rows.append([k, v])
+
+            # here we don't call htmlTable because we wrap the entire output in a <div/>
+            return s + tabulate(rows, tablefmt='html', headers=['field', 'value'])
+
+        s = '<div class="wbgapi">' + segment(self.concept, self.metadata)
+        subsets = {'series': 'Economy-Series', 'economies': 'Series-Economy', 'time': 'Series-Time'}
+        for k,v in subsets.items():
+            if hasattr(self, k):
+                s += segment(v, getattr(self, k))
+
+        return s + '</div>'
+
 
     def meta_report(self,d):
 
@@ -76,7 +97,7 @@ class Featureset():
 
     def _repr_html_(self):
 
-        return '<div>' + tabulate(self.table(), tablefmt='html', headers=self.columns) + '</div>'
+        return htmlTable(self.table(), headers=self.columns)
 
     def table(self):
 
@@ -99,7 +120,7 @@ class Coder(dict):
     def _repr_html_(self):
         rows = self._coder_report()
         columns = rows.pop(0)
-        return '<div>' + tabulate(rows, tablefmt='html', headers=columns) + '</div>'
+        return tabulate(rows, headers=columns)
 
     @property
     def summary(self):
@@ -370,24 +391,10 @@ def pandasSeries(data, key='id',value='value',name=None):
 
     return pd.Series({row[key]: row[value] for row in data}, name=name)
 
-def printInfo(info,key='id',value='value'):
-    '''Print a user report of dimension values. This core function is called
-    by the info() function in several modules.
-
-    Arguments:
-        info:       an object array
-
-        key:        key for column 1 values
-
-        value:      key for column 2 values
-
-    Returns:
-        None
+def htmlTable(*args, **kwargs):
+    '''Generates an HTML table wrapped in a <div class="wbgapi"/> to allow users
+       to customize the display if they wish. All arguments are passed to tabulate;
+       you should not include the 'tablefmt=html' parameter
     '''
 
-    maxKey = len( reduce(lambda a,b: a if len(a) > len(b) else b, [row[key] for row in info]) )
-    print('{:{}}  {}'.format(key, maxKey, value))
-    for row in info:
-        print('{:{}}  {}'.format(row[key], maxKey, row[value]))
-
-    print('{}  {} elements'.format(' ' * maxKey, len(info)))
+    return '<div class="wbgapi">' + tabulate(*args, tablefmt='html', **kwargs) + '</div>'

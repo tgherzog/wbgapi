@@ -228,6 +228,14 @@ Use the `source` object to learn about other databases and the `db` variable to 
 
 Hopefully that gives you a taste and enough to get started. Use `help()` and read the docstrings for lots more examples, information, and ideas
 
+### Customzing the Display ###
+
+wbgapi provides fairly good support for IPython, Jupyter Notebook, etc and will generally return HTML
+output for things like tables in those environments. HTML output is wrapped in a `<div class="wbgapi"/>`
+container so that you can customize the CSS if you so desire (for instance, I like to left-align the columns).
+The location of your custom.css varies depending on your environment. Note that this does not apply
+to DataFrame objects, which are formatted by pandas.
+
 ## Limitations ##
 
 * WBGAPI requires Python 3.x (it's 2020, and the [sun has set on Python 2.x][sunset]). Time
