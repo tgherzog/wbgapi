@@ -83,12 +83,13 @@ def _build(row,labels=False):
     '''utility function to build an economy record from API and cached data
     '''
 
-    global _class_data, _localized_metadata, _aggs
+    global _class_data, _localized_metadata
 
-    row['aggregate'] = row['id'] in _aggs
     cd = _class_data.get(row['id'])
+    if cd is None:
+        cd = _class_data.get('___')
     if cd:
-        row.update(_class_data[row['id']])
+        row.update(cd)
         row['capitalCity'] = _localized_metadata[w.lang].get('capitalCity:'+row['id'],'')
         if labels:
             for key in ['region', 'adminregion', 'lendingType', 'incomeLevel']:
@@ -190,6 +191,10 @@ def update_caches():
             if db['aggregate']:
                 _aggs.add(row['id'])
                 _aggs.add(row['iso2Code'])
+
+        # add one dummy that we can match to unrecognized economy codes
+        db = _class_data['USA']
+        _class_data['___'] = {k:None for k in db.keys()}
 
     else:
         # else, just update city codes
