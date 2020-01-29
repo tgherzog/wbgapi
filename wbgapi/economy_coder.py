@@ -11,7 +11,7 @@ import functools
 
 _lookup_data = None
 
-def lookup(name,debug=None):
+def coder(name,debug=None):
     '''Return the country code for a given country name, based on common spellings and conventions.
     This function is intended to make it easier to convert country names to ISO3 codes.
 
@@ -102,7 +102,7 @@ def lookup(name,debug=None):
     else:
         is_list = True
 
-    results = {k: None for k in name}
+    results = w.Coder({k: None for k in name})
     for t in name:
         t2 = prepare(t, clean=True, magicRegex=False)
         for pattern,id,mode,order in _lookup_data:
@@ -121,7 +121,7 @@ def lookup(name,debug=None):
 
     return results.get(name[0])
             
-def report(economies):
+def coder_report(economies, full=True):
 
     c = {row['id']: row['name'] for row in w.fetch('country/all', lang='en') if row['region']['id'] != 'NA'}
 
@@ -129,7 +129,7 @@ def report(economies):
     for k,v in economies.items():
         if v:
             wb_name = c.get(v, '')
-            if wb_name.lower() == k.lower():
+            if not full and wb_name.lower() == k.lower():
                 continue
         else:
             wb_name = ''
@@ -139,5 +139,8 @@ def report(economies):
     maxName1 = len( functools.reduce(lambda a,b: a if len(a) > len(b) else b, [row[0] for row in rows]) )
     maxName2 = len( functools.reduce(lambda a,b: a if len(a) > len(b) else b, [row[1] for row in rows]) )
 
+    output = []
     for row in rows:
-        print('{col1:{len1}}  {col2:{len2}}  {col3}'.format(col1=row[0], len1=maxName1, col2=row[1], len2=maxName2, col3=row[2]))
+        output.append([row[0], row[1], row[2]])
+    
+    return output

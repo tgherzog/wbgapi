@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="wbgapi",
-    version="0.1.0a5",
+    version="0.1.0a6",
     author="Tim Herzog",
     # author_email="author@example.com",
     description="wbgapi provides a comprehensive interface to the World Bank's daeta and metadata APIs",
@@ -21,6 +21,6 @@ setuptools.setup(
         "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha",
     ],
-    install_requires=['requests', 'PyYAML'],
+    install_requires=['requests', 'PyYAML', 'tabulate'],
     python_requires='>=3.0',
 )

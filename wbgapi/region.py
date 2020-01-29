@@ -90,4 +90,4 @@ def info(id='all',group=None):
         None
     '''
 
-    return w.Featureset(list(id, group=group), 'code', 'name')
+    return w.Featureset(list(id, group=group), ['code', 'name'])

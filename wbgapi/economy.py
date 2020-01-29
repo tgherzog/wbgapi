@@ -15,7 +15,7 @@ to databases that don't adhere to the country-level coding standards.
 
 import wbgapi as w
 from . import economy_metadata as metadata
-from . import economy_coder as coder
+from .economy_coder import coder, coder_report
 from functools import reduce
 import builtins
 try:
@@ -214,4 +214,4 @@ def info(id='all',skipAggs=False):
         None
     '''
 
-    return w.Featureset(list(id, skipAggs=skipAggs))
+    return w.Featureset(list(id, skipAggs=skipAggs), ['id', 'value', 'region', 'incomeLevel'])

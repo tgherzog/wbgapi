@@ -161,7 +161,7 @@ def info(id='all'):
         None
     '''
     
-    return w.Featureset(list(id), value='name')
+    return w.Featureset(list(id), ['id', 'name'])
 
 def _sourceurl(db):
     '''Internal function: returns the URL for fetching database objects

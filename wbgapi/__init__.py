@@ -63,31 +63,55 @@ class Metadata():
         return '\n--------\n'.join(['{}: {}'.format(k, v) for k,v in d.items()]) + '\n'
 
 class Featureset():
-    def __init__(self, items, key='id', value='value'):
+    def __init__(self, items, columns=None):
         ''' can be initialized with any iterable
         '''
 
         self.items = list(items)
-        self.key = key
-        self.value = value
+        self.columns = columns if columns else ['id', 'value']
 
     def __repr__(self):
 
-        maxKey = len( reduce(lambda a,b: a if len(a) > len(b) else b, [row[self.key] for row in self.items]) )
-        s = '{:{}}    {}\n'.format(self.key, maxKey, self.value)
-        for row in self.items:
-             s += '{:{}}    {}\n'.format(row[self.key], maxKey, row[self.value])
-
-        s += '{}    {} elements\n'.format(' ' * maxKey, len(self.items))
-        return s
+        return tabulate(self.table(), tablefmt='simple', headers=self.columns)
 
     def _repr_html_(self):
 
+        return '<div>' + tabulate(self.table(), tablefmt='html', headers=self.columns) + '</div>'
+
+    def table(self):
+
         rows = []
         for row in self.items:
-            rows.append([row[self.key], row[self.value]])
+            rows.append([row[k] for k in self.columns])
 
-        return '<div>' + tabulate(rows, tablefmt='html', headers=[self.key, self.value]) + '</div>'
+        rows.append(['', '{} elements'.format(len(rows))])
+        return rows
+
+class Coder(dict):
+    '''Class returned by coder if passed a list of terms
+    '''
+
+    def __repr__(self):
+        rows = self._coder_report()
+        columns = rows.pop(0)
+        return tabulate(rows, tablefmt='simple', headers=columns)
+
+    def _repr_html_(self):
+        rows = self._coder_report()
+        columns = rows.pop(0)
+        return '<div>' + tabulate(rows, tablefmt='html', headers=columns) + '</div>'
+
+    @property
+    def summary(self):
+        '''Prints a short report: just the economies that don't match the canonical name
+        '''
+
+        rows = self._coder_report(False)
+        columns = rows.pop(0)
+        print(tabulate(rows, tablefmt='simple', headers=columns))
+
+    def _coder_report(self, full=True):
+        return economy.coder_report(self, full)
 
 
 def fetch(url, params={}, concepts=False, lang=None):

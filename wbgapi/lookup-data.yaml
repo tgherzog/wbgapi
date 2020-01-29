@@ -40,6 +40,7 @@ GIN:
   order: 99 # defer to 'Guinea Bissau' and 'Equatorial Guinea'
 GBR:
 - Great Britain
+- England
 - :UK
 GMB:
 - Gambia
