@@ -152,7 +152,7 @@ def fetch(url, params={}, concepts=False, lang=None):
     the response structure and return the most appropriate set of iterated objects.
 
     Arguments:
-        url:        full URL for the API query, minus the query string
+        url:        partial URL (minus the base URL and langage) for the API query, minus the query string
 
         params:     optional query string parameters (required defaults are supplied by the function)
 
@@ -164,7 +164,7 @@ def fetch(url, params={}, concepts=False, lang=None):
         a generator object.
 
     Example:
-        for row in wbgapi.fetch('countries'):
+        for row in wbgapi.data.fetch('countries'):
           print(row['id'], row['name'])
 
     Notes:
@@ -200,14 +200,34 @@ def fetch(url, params={}, concepts=False, lang=None):
         recordsRead += int(hdr['per_page'])
         params_['page'] += 1
 
-def refetch(url, dimensions, **kwargs):
+def refetch(url, variables, **kwargs):
+    ''' repeating fetch: provides a variation of fetch() that allows URLs that exceed the maximium API limit to
+    be chunked.
+
+    Arguments:
+        url:            partial URL with tokens, each of which must have values specified as function arguments. See example below
+
+        variables:      array of variables to be chunked if necessary, in the order they should be chunked
+
+        **kwargs:       remaining arguments MUST include values for each token in the url string. All arguments to fetch
+                        are also acceptable and are passed to fetch
+
+    Returns:
+        A generator object
+
+    Example:
+        # fetch all indicators for Brazil and Argentina
+        s = ';'.join([row['id'] for row in wbgapi.series.list()])
+        for row in wbgapi.data.refetch('sources/{source}/series/{series}/country/{economy}', ['series', 'economy'], source=2, series=s, economy='BRA;ARG'):
+            print(row)
+    '''
 
     concepts = kwargs.get('concepts', False)
     lang     = kwargs.get('lang', None)
     params   = kwargs.get('params', {})
 
     try:
-        for url2 in _refetch_url(url, dimensions[0], dimensions[1:], **kwargs):
+        for url2 in _refetch_url(url, variables[0], variables[1:], **kwargs):
             for row in fetch(url2, params, concepts, lang):
                 yield row
     except URLError:
@@ -426,7 +446,7 @@ def htmlTable(*args, **kwargs):
 
     return '<div class="wbgapi">' + tabulate(*args, tablefmt='html', **kwargs) + '</div>'
 
-def _refetch_url(url, var, dimensions, **kwargs):
+def _refetch_url(url, var, variables, **kwargs):
     '''Used to chunk potentially very long URLs smaller ones by splitting long arguments
 
     Returns a generator of URLs that will not exceed the API's maximum string length
@@ -476,11 +496,11 @@ def _refetch_url(url, var, dimensions, **kwargs):
 
     # by now we've chunked as much as we can on var. If that's not enough, then we
     # start chunking the next variable
-    if len(dimensions) == 0:
+    if len(variables) == 0:
         # if there's no more variables then we cry Uncle and give up
         raise URLError()
 
     for elem in parts:
         kw[var] = elem
-        for u2 in _refetch_url(url, dimensions[0], dimensions[1:], **kw):
+        for u2 in _refetch_url(url, variables[0], variables[1:], **kw):
             yield u2
