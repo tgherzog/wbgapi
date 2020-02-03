@@ -72,15 +72,21 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
     dimensions_.update(dimensions)
 
     url = 'sources/{}'.format(w.db)
+    keys = ['series', 'economy', 'time']
+    values = {}
     for k,v in dimensions_.items():
         if k not in concepts:
             raise KeyError('{} is not a concept in database {}'.format(k, w.db))
 
-        url += '/{}/{}'.format(concepts[k]['key'], w.queryParam(v, concept=k))
+        if k not in keys:
+            keys.append(k)
+
+        url += '/{}/{}'.format(concepts[k]['key'], '{' + k + '}')
+        values[k] = w.queryParam(v, concept=k)
 
     aggs = w.economy.aggregates()
 
-    for row in w.fetch(url, params_):
+    for row in w.refetch(url, keys, params=params_, **values):
         if skipBlanks and row['value'] is None:
             continue
 

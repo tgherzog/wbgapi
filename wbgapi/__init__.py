@@ -383,7 +383,7 @@ def queryParam(arg, concept=None):
         arg = _latest_concept_cache[db].get(concept, '')
         
     if type(arg) is str or type(arg) is int:
-        return str(arg)
+        arg = [arg]
 
     if concept == 'time':
         v = time.periods()
