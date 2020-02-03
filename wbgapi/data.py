@@ -288,7 +288,7 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
     df.sort_index(axis=0,inplace=True)
     df.sort_index(axis=1,inplace=True)
     if labels:
-        return pd.concat([df2,df], axis=1)
+        return pd.concat([df2,df], axis=1, sort=False)
         
     return df
         

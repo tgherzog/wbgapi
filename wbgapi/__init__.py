@@ -24,7 +24,12 @@ except ImportError:
 # defaults: these can be changed at runtime with reasonable results
 endpoint = 'https://api.worldbank.org/v2'
 lang = 'en'
+per_page = 1000          # you can increase this if you start getting 'service unavailable' messages, which can mean you're sending too many requests per minute
 db = 2
+
+# The maximum URL length is 1500 chars before it reports a server error. Internally we use a smaller
+# number for head room as well as to provide for the query string
+api_maxlen = 1400
 
 class APIError(Exception):
   def __init__(self,url,msg,code=None):
@@ -38,6 +43,8 @@ class APIError(Exception):
 
     return 'APIError: {} ({})'.format(self.msg, self.url)
 
+class URLError(Exception):
+    pass
 
 class Metadata():
     def __init__(self,concept,id):
@@ -166,9 +173,9 @@ def fetch(url, params={}, concepts=False, lang=None):
         of the API.
     '''
 
-    global endpoint
+    global endpoint, per_page
 
-    params_ = {'per_page': 100}
+    params_ = {'per_page': per_page}
     params_.update(params)
     params_['page'] = 1
     params_['format'] = 'json'
@@ -193,7 +200,20 @@ def fetch(url, params={}, concepts=False, lang=None):
         recordsRead += int(hdr['per_page'])
         params_['page'] += 1
 
-def get(url,params={},concepts=False):
+def refetch(url, dimensions, **kwargs):
+
+    concepts = kwargs.get('concepts', False)
+    lang     = kwargs.get('lang', None)
+    params   = kwargs.get('params', {})
+
+    try:
+        for url2 in _refetch_url(url, dimensions[0], dimensions[1:], **kwargs):
+            for row in fetch(url2, params, concepts, lang):
+                yield row
+    except URLError:
+        raise ValueError('{}: parameters exceed the API\'s maximum limit'.format(url))
+
+def get(url, params={}, concepts=False, lang=None):
     '''Return a single response from the API
 
     Arguments:
@@ -210,7 +230,10 @@ def get(url,params={},concepts=False):
         print(wbgapi.get('countries/BRA')['name'])
     '''
 
-    global endpoint, lang
+    global endpoint
+
+    if lang is None:
+       lang = globals()['lang']
 
     params_ = params.copy()
     params_['page'] = 1
@@ -402,3 +425,62 @@ def htmlTable(*args, **kwargs):
     '''
 
     return '<div class="wbgapi">' + tabulate(*args, tablefmt='html', **kwargs) + '</div>'
+
+def _refetch_url(url, var, dimensions, **kwargs):
+    '''Used to chunk potentially very long URLs smaller ones by splitting long arguments
+
+    Returns a generator of URLs that will not exceed the API's maximum string length
+    '''
+
+    global api_maxlen
+
+    def subdivide(parts):
+        # split a long semicolon separated string into 2 roughly equal segments, on a semicolon boundary
+
+        parts2 = []
+        for s in parts:
+            mp = int(len(s)/2)
+            of = s[mp:].find(';')
+            if of < 0:
+                # part can't be subdivided
+                parts2.append(s)
+            else:
+                parts2.extend([s[:mp+of], s[mp+of+1:]])
+        
+        return parts2
+
+    kw = kwargs.copy()
+
+    # parts is an array of roughly equal chunks of the value for var. We first try to see
+    # if the entire string can be passed as one, else we chunk it into smaller and smaller pieces
+    parts = [kwargs[var]]
+    sz = None
+    while True:
+        kw[var] = max(parts, key=len)
+        test_url = url.format(**kw)
+        if len(test_url) < api_maxlen:
+            # we are small enough
+            for elem in parts:
+                kw[var] = elem
+                yield url.format(**kw)
+
+            return
+
+        # else, subdivide parts and try again
+        parts2 = subdivide(parts)
+        if len(parts) == len(parts2):
+            # can't subdivide any more
+            break
+        else:
+            parts = parts2
+
+    # by now we've chunked as much as we can on var. If that's not enough, then we
+    # start chunking the next variable
+    if len(dimensions) == 0:
+        # if there's no more variables then we cry Uncle and give up
+        raise URLError()
+
+    for elem in parts:
+        kw[var] = elem
+        for u2 in _refetch_url(url, dimensions[0], dimensions[1:], **kw):
+            yield u2

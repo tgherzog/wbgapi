@@ -106,7 +106,10 @@ def features(concept, id='all', db=None):
             print(elem['id'], elem['value'])
     '''
 
-    return w.fetch(_concepturl(concept, id, db))
+    if db is None:
+        db = w.db
+
+    return w.refetch('sources/{source}/{concept}/{id}', ['id'], source=db, concept=concepts(db)[concept]['key'], id=id)
 
 def feature(concept, id, db=None):
     '''Retrieve a single feature for the specified database. This is an internal function
@@ -126,7 +129,10 @@ def feature(concept, id, db=None):
         print(wbgapi.source.feature('series', 'SP.POP.TOTL')['value'])
     '''
 
-    return w.get(_concepturl(concept, id, db))
+    if db is None:
+        db = w.db
+
+    return w.get('sources/{}/{}/{}'.format(db, concepts(db)[concept]['key'], id))
 
 def has_metadata(db=None):
     '''Test whether the specified database is expected to have metadata, as determined
