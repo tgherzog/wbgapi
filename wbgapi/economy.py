@@ -202,6 +202,27 @@ def update_caches():
             _localized_metadata[w.lang]['capitalCity:'+row['id']] = row['capitalCity'].strip()
             
 
+def iso2(code):
+    '''Return the iso2 code for a given iso3 code.
+
+    Parameters:
+
+        code:       iso3 code
+
+    Returns:
+
+        And iso2 code, or None
+
+    Notes:
+        iso2 codes are not used in the module, but this function is provided as
+        a convenience if you need it.
+        
+    '''
+
+    global _iso2Codes
+
+    return _iso2Codes.get(code)
+
 def info(id='all',skipAggs=False):
     '''Print a user report of economies
 
