@@ -62,7 +62,9 @@ class Metadata():
         subsets = {'series': 'Economy-Series', 'economies': 'Series-Economy', 'time': 'Series-Time'}
         for k,v in subsets.items():
             if hasattr(self, k):
-                s += '========\n{}\n\n'.format(v) + segment(getattr(self, k))
+                d = getattr(self, k)
+                if len(d):
+                    s += '========\n{}\n\n'.format(v) + segment(d)
 
         return s
 
@@ -85,7 +87,9 @@ class Metadata():
         subsets = {'series': 'Economy-Series', 'economies': 'Series-Economy', 'time': 'Series-Time'}
         for k,v in subsets.items():
             if hasattr(self, k):
-                s += segment(v, getattr(self, k))
+                d = getattr(self, k)
+                if len(d):
+                    s += segment(v, d)
 
         return s + '</div>'
 
@@ -217,7 +221,8 @@ def refetch(url, variables, **kwargs):
         variables:      array of variables to be chunked if necessary, in the order they should be chunked
 
         **kwargs:       remaining arguments MUST include values for each token in the url string. All arguments to fetch
-                        are also acceptable and are passed to fetch
+                        are also acceptable and are passed to fetch. Any "chunkable" variable should be a semicolon-separated
+                        value array. Arrays and iterables are not acceptable values
 
     Returns:
         A generator object
@@ -273,22 +278,24 @@ def get(url, params={}, concepts=False, lang=None):
     return data[0] if len(data) > 0 else None
 
 
-def metadata(url,params={},concepts='all'):
+def metadata(url, variables, concepts='all', **kwargs):
     '''Return metadata records
 
     Arguments:
-        url:        Full url for the API request (minus the query string)
+        url:        url with tokens, as per refetch()
 
-        params:     Optional query parameters
+        variables:  variables that can be chunked, in priority order (see refetch)
 
         concepts:   Name or list-like of the concepts to return: 'all' for all concepts
+
+        **kwargs:   Remaining arguments to pass to refetch (must include varables for tokens in url)
 
     Returns:
         a generator that returns Metadata objects
 
     Example:
-        for meta in wbgapi.metadata('sources/2/series/SP.POP.TOTL/country/FRA;CAN/metadata',
-            concepts=['Series','Country-Series']):
+        for meta in wbgapi.metadata('sources/2/series/{series}/country/{economy}/metadata', ['series', 'economy'],
+            concepts=['Series','Country-Series'], series='SP.POP.TOTL', economy='FRA;CAN'):
                 print(meta.concept, meta.id, len(meta.metadata))
                 
     Notes:
@@ -310,7 +317,7 @@ def metadata(url,params={},concepts='all'):
                 yield (concept['id'], var['id'], field)
     
     m = Metadata(None,None)
-    for row in fetch(url,params,concepts=True):
+    for row in refetch(url, variables, concepts=True, **kwargs):
         if concepts and row['id'] not in concepts:
             continue
 

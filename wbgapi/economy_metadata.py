@@ -30,9 +30,6 @@ def fetch(id,series=[],db=None):
         
     '''
 
-    pg_size = 50    # large 2-dimensional metadata requests must be paged or the API will barf
-                    # this sets the page size. Seems to work well even for very log CETS identifiers
-
     if db is None:
         db = w.db
 
@@ -40,25 +37,24 @@ def fetch(id,series=[],db=None):
         return None
 
     if type(series) is str:
-        series = [series]
+        if series == 'all':
+            # could be huge
+            series = [row['id'] for row in w.series.list()]
+        else:
+            series = [series]
 
-    url = 'sources/{}/country/{}/metadata'.format(db, w.queryParam(id, 'economy'))
-    for row in w.metadata(url):
+    # as far as I can tell even for databases where the dimension is called 'economy' or something else the metadata API still 
+    # wants 'country' as a parameter
+    for row in w.metadata('sources/{source}/country/{economy}/metadata', ['economy'], source=db, economy=w.queryParam(id, 'economy')):
         if series:
             row.series = {}
-            n = 0
-            while n < len(series):
+            # requests for non-existing data throw malformed responses so we must catch for them
+            try:
                 cs = ';'.join(['{}~{}'.format(row.id,elem) for elem in series[n:n+pg_size]])
-                n += pg_size
-                url2 = 'sources/{}/Country-Series/{}/metadata'.format(db, cs)
-
-                # requests for non-existing data throw malformed responses so we must catch for them
-                try:
-                    for row2 in w.metadata(url2):
-                        # w.metadata should be returning single entry dictionaries here since it pages for each new identifier
-                        row.series[row2.id.split('~')[1]] = row2.metadata['Country-Series']
-                except:
-                    pass
+                for row2 in w.metadata('sources/{source}/Country-Series/{series}/metadata', ['series'], source=db, series=cs):
+                    row.series[row2.id.split('~')[1]] = row2.metadata['Country-Series']
+            except:
+                pass
 
         yield row
 

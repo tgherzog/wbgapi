@@ -27,14 +27,17 @@ def fetch(id,economies=[],time=[],db=None):
             print(meta)
     '''
 
-    pg_size = 50    # large 2-dimensional metadata requests must be paged or the API will barf
-                    # this sets the page size. Seems to work well even for very log CETS identifiers
-
     if type(economies) is str:
-        economies = [economies]
+        if economies == 'all':
+            economies = [row['id'] for row in w.economy.list()]
+        else:
+            economies = [economies]
 
     if type(time) is str:
-        time = [time]
+        if time == 'all':
+            time = [row['id'] for row in w.time.list()]
+        else:
+            time = [time]
 
     if db is None:
         db = w.db
@@ -42,37 +45,25 @@ def fetch(id,economies=[],time=[],db=None):
     if not w.source.has_metadata(db):
         return None
 
-    url = 'sources/{}/series/{}/metadata'.format(db, w.queryParam(id, 'series'))
-    for row in w.metadata(url):
+    for row in w.metadata('sources/{source}/series/{series}/metadata', ['series'], source=db, series=w.queryParam(id, 'series')):
         if economies:
             row.economies = {}
-            n = 0
-            while n < len(economies):
-                cs = ';'.join(['{}~{}'.format(elem,row.id) for elem in economies[n:n+pg_size]])
-                n += pg_size
-                url2 = 'sources/{}/Country-Series/{}/metadata'.format(db, cs)
-
-                # requests for non-existing data throw malformed responses so we must catch for them
-                try:
-                    for row2 in w.metadata(url2):
-                        # w.metadata should be returning single entry dictionaries here since it pages for each new identifier
-                        row.economies[row2.id.split('~')[0]] = row2.metadata['Country-Series']
-                except:
-                    pass
+            # requests for non-existing data throw malformed responses so we must catch for them
+            try:
+                cs = ';'.join(['{}~{}'.format(elem,row.id) for elem in economies])
+                for row2 in w.metadata('sources/{source}/Country-Series/{series}/metadata', ['series'], source=db, series=cs):
+                    row.economies[row2.id.split('~')[0]] = row2.metadata['Country-Series']
+            except:
+                pass
 
         if time:
             row.time = {}
-            n = 0
-            while n < len(time):
-                st = ';'.join(['{}~{}'.format(row.id,elem) for elem in time[n:n+pg_size]])
-                n += pg_size
-                url2 = 'sources/{}/Series-Time/{}/metadata'.format(db, st)
-
-                try:
-                    for row2 in w.metadata(url2):
-                        row.time[row2.id.split('~')[1]] = row2.metadata['Series-Time']
-                except:
-                    pass
+            try:
+                st = ';'.join(['{}~{}'.format(row.id,elem) for elem in time])
+                for row2 in w.metdata('sources/{source}/Series-Time/{series}/metadata', ['series'], source=db, series=st):
+                    row.time[row2.id.split('~')[1]] = row2.metadata['Series-Time']
+            except:
+                pass
 
         yield row
 
