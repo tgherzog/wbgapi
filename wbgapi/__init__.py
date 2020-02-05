@@ -90,10 +90,6 @@ class Metadata():
         return s + '</div>'
 
 
-    def meta_report(self,d):
-
-        return '\n--------\n'.join(['{}: {}'.format(k, v) for k,v in d.items()]) + '\n'
-
 class Featureset():
     def __init__(self, items, columns=None):
         ''' can be initialized with any iterable
@@ -104,15 +100,26 @@ class Featureset():
 
     def __repr__(self):
 
-        return tabulate(self.table(), tablefmt='simple', headers=self.columns)
+        rows = self.table()
+        if len(rows) == 0:
+            return ''
+
+        return tabulate(rows, tablefmt='simple', headers=self.columns)
 
     def _repr_html_(self):
 
-        return htmlTable(self.table(), headers=self.columns)
+        rows = self.table()
+        if len(rows) == 0:
+            return ''
+
+        return htmlTable(rows, headers=self.columns)
 
     def table(self):
 
         rows = []
+        if len(self.items) == 0:
+            return rows
+
         for row in self.items:
             rows.append([row[k] for k in self.columns])
 

@@ -31,7 +31,11 @@ def list(id='all'):
             print(elem['id'], elem['name'], elem['lastupdated'])
     '''
 
-    return w.fetch(_sourceurl(w.queryParam(id)), {'databid': 'y'})
+    id = w.queryParam(id)
+    if not id:
+        return []
+
+    return w.fetch(_sourceurl(id), {'databid': 'y'})
 
 def get(db=None):
     '''Retrieve the record for a single database
@@ -108,6 +112,10 @@ def features(concept, id='all', db=None):
 
     if db is None:
         db = w.db
+
+    if not id:
+        # e.g., '' or []
+        return []
 
     return w.refetch('sources/{source}/{concept}/{id}', ['id'], source=db, concept=concepts(db)[concept]['key'], id=id)
 
