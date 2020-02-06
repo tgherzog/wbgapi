@@ -155,14 +155,14 @@ def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlank
     key = 'value' if labels else 'id'
     df = None
 
+    # we set numericTimeKeys=True so that time values will always be numeric if possible
     for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, numericTimeKeys=True, skipAggs=skipAggs, params=params, **dimensions):
         if df is None:
             # this assumes that the API returns the same object structure in every row, so we can use the first as a template
             columns = row.keys()
             df = pd.DataFrame(columns=columns)
-            keys = {i: 'id' if i == 'time' else key for i in columns}
 
-        df.loc[len(df)] = [row[i][keys[i]] if type(row[i]) is dict else row[i] for i in columns]
+        df.loc[len(df)] = [row[i][key] if type(row[i]) is dict else row[i] for i in columns]
 
     return df
 
@@ -177,10 +177,10 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         time:               a time identifier or list-like, e.g., 'YR2015' or range(2010,2020).
                             Both element keys and values are acceptable
 
-        axes:               a 2-element array specifiying the dimensions to use for the index (row) and column
-                            of the dataframe. If 'auto' then the function will choose for you based on your
-                            request. This works best if at least one of series, economies or time is restricted
-                            to a single value (mrv=1 and mrnev=1 effectively do the same thing).
+        axes:               a list-like of at least two elements specifying the dimensions to use for the dataframe's
+                            index and column. The last element specifies the column while the others specify the
+                            index. 3 or more dimensions will produce a multi-index dataframe. If 'auto' then the
+                            function will choose dimensions for you based on your request.
 
         mrv:                return only the specified number of most recent values (same time period for all economies)
 
@@ -262,6 +262,9 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
                 axes.remove(k)
 
     # sanity check: don't include time column if it's a dimension
+    if len(axes) < 2:
+        raise ValueError('axes must be \'auto\' or a list of at least two concepts')
+
     if 'time' in axes:
         timeColumns = False
 
