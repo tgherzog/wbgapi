@@ -333,6 +333,35 @@ def metadata(url, variables, concepts='all', **kwargs):
     if m.concept:
         yield m
 
+def search(q, concepts='all', db=None):
+    ''' search database metadata for matching text.
+
+    Arguments:
+        url:        url with tokens, as per refetch()
+
+        concepts:   Name or list-like of the concepts to return: 'all' for all concepts
+
+        **kwargs:   Remaining arguments to pass to refetch (must include varables for tokens in url)
+
+    Returns:
+        a generator that provides Metadata objects (same as metadata())
+
+    Notes:
+        The return of this function is the same as for the metadata() function. The difference
+        is that the metadata property contains matching metadata fields and values.
+
+    Examples:
+        for row in wbgapi.search('fossil fuels'):
+            print(row)
+
+    '''
+    
+    if db is None:
+        db = globals()['db']
+
+    for row in metadata('sources/{source}/search/{q}', ['source'], concepts=concepts, source=str(db), q=urllib.parse.quote(q, safe='')):
+        yield row
+
 def _responseHeader(url, result):
     '''Internal function to return the response header, which contains page information
     '''
