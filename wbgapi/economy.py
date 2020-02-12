@@ -221,6 +221,7 @@ def iso2(code):
 
     global _iso2Codes
 
+    update_caches()
     return _iso2Codes.get(code)
 
 def info(id='all',skipAggs=False):
