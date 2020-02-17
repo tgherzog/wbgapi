@@ -45,7 +45,7 @@ def fetch(id,economies=[],time=[],db=None):
     if not w.source.has_metadata(db):
         return None
 
-    for row in w.metadata('sources/{source}/series/{series}/metadata', ['series'], source=db, series=w.queryParam(id, 'series')):
+    for row in w.metadata('sources/{source}/series/{series}/metadata', ['series'], source=db, series=w.queryParam(id, 'series', db=db)):
         if economies:
             row.economies = {}
             # requests for non-existing data throw malformed responses so we must catch for them

@@ -45,7 +45,7 @@ def fetch(id,series=[],db=None):
 
     # as far as I can tell even for databases where the dimension is called 'economy' or something else the metadata API still 
     # wants 'country' as a parameter
-    for row in w.metadata('sources/{source}/country/{economy}/metadata', ['economy'], source=db, economy=w.queryParam(id, 'economy')):
+    for row in w.metadata('sources/{source}/country/{economy}/metadata', ['economy'], source=db, economy=w.queryParam(id, 'economy', db=db)):
         if series:
             row.series = {}
             # requests for non-existing data throw malformed responses so we must catch for them

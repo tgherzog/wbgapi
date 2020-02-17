@@ -14,11 +14,13 @@ import builtins
 # this is an array of reverse value lookup tables
 _time_values = {}
 
-def list(id='all'):
+def list(id='all', db=None):
     '''Return a list of time elements in the current database
 
     Arguments:
         id:     a time identifier or list-like
+
+        db:     database; pass None to access the global database
 
     Returns:
         a generator object
@@ -29,13 +31,15 @@ def list(id='all'):
             print(elem['id'], elem['value'])
     '''
 
-    return w.source.features('time', w.queryParam(id, 'time'))
+    return w.source.features('time', w.queryParam(id, 'time', db=db), db=db)
 
-def get(id):
+def get(id, db=None):
     '''Retrieve the specified time element
 
     Arguments:
-        id: the time identifier
+        id:     the time identifier
+
+        db:     database; pass None to access the global database
         
     Returns:
         a time object
@@ -44,33 +48,38 @@ def get(id):
         print(wbgapi.time.get('YR2015')['value'])
     '''
 
-    return w.source.feature('time', w.queryParam(id, 'time'))
+    return w.source.feature('time', w.queryParam(id, 'time', db=db), db=db)
 
     
-def periods():
+def periods(db=None):
     '''Returns a dict of time features keyed by value for the current database. This is
     primarily used internally to recognize both values and keys as equivalent
     '''
     global _time_values
     
-    v = _time_values.get(w.db)
+    if db is None:
+        db = w.db
+
+    v = _time_values.get(db)
     if v is None:
         v = {}
         for row in w.source.features('time', 'all'):
             v[row['value']] = row['id']
 
-        _time_values[w.db] = v
+        _time_values[db] = v
 
     return v
 
-def info(id='all'):
+def info(id='all', db=None):
     '''Print a user report of time features
 
     Arguments:
         id:         a time identifier or list-like
 
+        db:         database; pass None to access the global database
+
     Returns:
         None
     '''
 
-    return w.Featureset(list(id))
+    return w.Featureset(list(id, db=db))

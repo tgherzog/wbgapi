@@ -10,7 +10,7 @@ except ImportError:
     np = None
     pd = None
 
-def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, params={}, **dimensions):
+def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, params={}, db=None, **dimensions):
     '''Retrieve rows of data for the current database
 
     Arguments:
@@ -58,7 +58,10 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         
     '''
 
-    concepts = w.source.concepts(w.db)
+    if db is None:
+        db = w.db
+
+    concepts = w.source.concepts(db)
     concept_keys = {v['key']: k for k,v in concepts.items()}
     params_ = {}
     params_.update(params)
@@ -71,18 +74,18 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
     dimensions_ = {'series': series, 'economy': economy, 'time': time}
     dimensions_.update(dimensions)
 
-    url = 'sources/{}'.format(w.db)
+    url = 'sources/{}'.format(db)
     keys = ['series', 'economy', 'time']
     values = {}
     for k,v in dimensions_.items():
         if k not in concepts:
-            raise KeyError('{} is not a concept in database {}'.format(k, w.db))
+            raise KeyError('{} is not a concept in database {}'.format(k, db))
 
         if k not in keys:
             keys.append(k)
 
         url += '/{}/{}'.format(concepts[k]['key'], '{' + k + '}')
-        values[k] = w.queryParam(v, concept=k)
+        values[k] = w.queryParam(v, concept=k, db=db)
 
     aggs = w.economy.aggregates()
 
@@ -117,7 +120,7 @@ def fetch(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=Fa
         if not skip:
             yield x
 
-def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}, **dimensions):
+def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, params={}, db=None, **dimensions):
     '''Retrieve a flat pandas dataframe (1 row per observation)
 
     Arguments:
@@ -156,7 +159,7 @@ def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlank
     df = None
 
     # we set numericTimeKeys=True so that time values will always be numeric if possible
-    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, numericTimeKeys=True, skipAggs=skipAggs, params=params, **dimensions):
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, numericTimeKeys=True, skipAggs=skipAggs, params=params, db=db, **dimensions):
         if df is None:
             # this assumes that the API returns the same object structure in every row, so we can use the first as a template
             columns = row.keys()
@@ -166,7 +169,7 @@ def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlank
 
     return df
 
-def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, flat=False, numericTimeKeys=False, timeColumns=False, params={}, **dimensions):
+def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, flat=False, numericTimeKeys=False, timeColumns=False, params={}, db=None, **dimensions):
     '''Retrieve a 2-dimensional pandas dataframe. 
     
     Arguments:
@@ -197,6 +200,7 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         numericTimeKeys:    store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
 
         timeColumns:        add extra columns to show the time dimension for each series/economy
+                            If 'auto' then the function will guess based on other parameters
 
         params:             extra query parameters to pass to the API
 
@@ -217,6 +221,10 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
 
         # Top 10 emitters per capita
         wbgapi.data.DataFrame('EN.ATM.CO2E.PC',mrnev=1,labels=True).sort_values('EN.ATM.CO2E.PC',ascending=False).head(10)
+
+    Notes:
+        timeColumns currently defaults to False so that the default column composition is consistent. This may change to 'auto'
+        at some point, so that mrv behavior is more intuitive for data discovery
     '''
 
     def frame(axes):
@@ -229,21 +237,25 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
 
     def is_single(x):
 
-        if type(x) is str and x == 'all':
-            return False
+        if type(x) is str:
+            if x == 'all':
+                return False
+            elif x == 'mrv':
+                return True
 
+        # not necessary to pass db since we don't actually care about the parameters just the count of them
         return len(w.queryParam(x).split(';')) == 1
 
 
     if flat:
-        return FlatFrame(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=labels, skipAggs=skipAggs, params=params, **dimensions)
+        return FlatFrame(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=labels, skipAggs=skipAggs, params=params, db=db, **dimensions)
 
     if pd is None:
         raise ModuleNotFoundError('you must install pandas to use this feature')
 
     if type(axes) is str and axes == 'auto':
         axes = ['economy', 'series', 'time']
-        for k,v in w.source.concepts().items():
+        for k,v in w.source.concepts(db).items():
             if k not in axes:
                 axes.insert(0, k)
 
@@ -256,28 +268,32 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
             if len(axes) == 2:
                 break
 
-            if k == 'time' and (mrv == 1 or mrnev == 1 or is_single(dimensions_[k])):
+            values = dimensions_.get(k, 'all')
+            if k == 'time' and (mrv == 1 or mrnev == 1 or is_single(values)):
                 axes.remove(k)
-            elif is_single(dimensions_[k]):
+                if timeColumns == 'auto' and (mrv == 1 or mrnev == 1):
+                    timeColumns = True
+
+            elif is_single(values):
                 axes.remove(k)
 
     # sanity check: don't include time column if it's a dimension
     if len(axes) < 2:
         raise ValueError('axes must be \'auto\' or a list of at least two concepts')
 
-    if 'time' in axes:
+    if 'time' in axes or timeColumns == 'auto':
         timeColumns = False
 
     # for now let's see if it works to build the dataframe dynamically
     df = frame(axes)
     dummy = pd.Series()    # empty series - never assigned actual values
     ts_suffix = ':T'
-    concepts = w.source.concepts()
+    concepts = w.source.concepts(db)
     if labels:
         # create a separate dataframe for labels so that we can control the column position below
         df2 = frame(axes)
 
-    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params, **dimensions):
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params, db=db, **dimensions):
         column_key = row[axes[-1]]['id']
         if len(axes) == 2:
             index_key = row[axes[0]]['id']
@@ -302,7 +318,7 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
     return df
         
 
-def get(series, economy, time='all', mrv=None, mrnev=None, labels=False, numericTimeKeys=False, **dimensions):
+def get(series, economy, time='all', mrv=None, mrnev=None, labels=False, numericTimeKeys=False, db=None, **dimensions):
     '''Retrieve a single data point for the current database
 
     Arguments:
@@ -334,10 +350,10 @@ def get(series, economy, time='all', mrv=None, mrnev=None, labels=False, numeric
         print(wbgapi.data.get('SP.POP.TOTL', 'FRA', mrnev=1)['value'])
     '''
 
-    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, labels=labels, numericTimeKeys=numericTimeKeys, params={'per_page': 1}, **dimensions):
+    for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, labels=labels, numericTimeKeys=numericTimeKeys, params={'per_page': 1}, db=db, **dimensions):
         return row
 
-def footnote(series, economy, time):
+def footnote(series, economy, time, db=None):
     '''Return the footnote for a single data point, if any
 
     Arguments:
@@ -354,7 +370,10 @@ def footnote(series, economy, time):
         print(wbgapi.data.footnote('SP.POP.TOTL', 'FRA', 2015))
     '''
 
-    url = 'sources/{}/footnote/{}~{}~{}/metadata'.format(w.db, economy, series, w.queryParam(time, 'time'))
+    if db is None:
+        db = w.db
+
+    url = 'sources/{}/footnote/{}~{}~{}/metadata'.format(db, economy, series, w.queryParam(time, 'time', db=db))
     try:
         for row in w.metadata(url):
             return row.metadata['FootNote']

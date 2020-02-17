@@ -175,7 +175,7 @@ def info(id='all'):
         None
     '''
     
-    return w.Featureset(list(id), ['id', 'name'])
+    return w.Featureset(list(id), ['id', 'name', 'lastupdated'])
 
 def _sourceurl(db):
     '''Internal function: returns the URL for fetching database objects
@@ -185,13 +185,3 @@ def _sourceurl(db):
         db = w.db
 
     return 'sources/{}'.format(db)
-
-def _concepturl(concept, id, db):
-    '''Internal function: return the URL for fetching database features
-    '''
-
-    if db is None:
-        db = w.db
-
-    return 'sources/{}/{}/{}'.format(db, concepts(db)[concept]['key'], id)
-

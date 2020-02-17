@@ -420,7 +420,7 @@ def _queryAPI(url):
 
 _latest_concept_cache = {}
 
-def queryParam(arg, concept=None):
+def queryParam(arg, concept=None, db=None):
     ''' Prepare parameters for an API query. This is a core function
     called by several dimension-specific functions of the same name
 
@@ -429,12 +429,17 @@ def queryParam(arg, concept=None):
 
         concept:    concept for the arguments passed
 
+        db:         database; pass None to access the global database
+
     Returns:
         a semicolon separated API-ready parameter string
     '''
 
+    if db is None:
+        db = globals()['db']
+
     if type(arg) is str and arg == 'mrv' and concept:
-        global _latest_concept_cache, db
+        global _latest_concept_cache
 
         if _latest_concept_cache.get(db) is None:
             _latest_concept_cache[db] = {}
@@ -449,7 +454,7 @@ def queryParam(arg, concept=None):
         arg = [arg]
 
     if concept == 'time':
-        v = time.periods()
+        v = time.periods(db)
         return ';'.join(map(lambda x: str(v.get(str(x),x)), arg))
 
     # this will throw an exception if arg is not iterable, which is what we want it to do

@@ -36,7 +36,7 @@ _class_data = None
 # translated names of regions and cities. This is keyed by language and code
 _localized_metadata = {}
 
-def list(id='all',labels=False,skipAggs=False):
+def list(id='all',labels=False,skipAggs=False, db=None):
     '''Return a list of economies in the current database
 
     Arguments:
@@ -55,12 +55,12 @@ def list(id='all',labels=False,skipAggs=False):
     global _class_data
 
     update_caches()
-    for row in w.source.features('economy', w.queryParam(id, 'economy')):
+    for row in w.source.features('economy', w.queryParam(id, 'economy', db=db), db=db):
         _build(row,labels)
         if skipAggs == False or row['aggregate'] == False:
             yield row
 
-def get(id,labels=False):
+def get(id,labels=False, db=None):
     '''Retrieve the specified economy
 
     Arguments:
@@ -74,7 +74,7 @@ def get(id,labels=False):
     '''
 
     update_caches()
-    row = w.source.feature('economy', id)
+    row = w.source.feature('economy', id, db=db)
     _build(row,labels)
     return row
 
@@ -96,7 +96,7 @@ def _build(row,labels=False):
                 row[key] = {'id': row[key], 'value': _localized_metadata[w.lang].get(row[key],'')}
 
 
-def DataFrame(id='all',labels=False, skipAggs=False):
+def DataFrame(id='all',labels=False, skipAggs=False, db=None):
     '''Return a pandas DataFrame of economy records
 
     Arguments:
@@ -120,7 +120,7 @@ def DataFrame(id='all',labels=False, skipAggs=False):
     df = None
     row_key = 'value' if labels else 'id'
 
-    for row in list(id,labels=True, skipAggs=skipAggs):
+    for row in list(id,labels=True, skipAggs=skipAggs, db=db):
         if df is None:
             columns = builtins.list(row.keys())
             columns.remove('id')
@@ -224,7 +224,7 @@ def iso2(code):
     update_caches()
     return _iso2Codes.get(code)
 
-def info(id='all',skipAggs=False):
+def info(id='all',skipAggs=False, db=None):
     '''Print a user report of economies
 
     Arguments:
@@ -236,4 +236,4 @@ def info(id='all',skipAggs=False):
         None
     '''
 
-    return w.Featureset(list(id, skipAggs=skipAggs), ['id', 'value', 'region', 'incomeLevel'])
+    return w.Featureset(list(id, skipAggs=skipAggs, db=db), ['id', 'value', 'region', 'incomeLevel'])
