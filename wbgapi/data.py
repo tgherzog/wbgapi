@@ -373,9 +373,10 @@ def footnote(series, economy, time, db=None):
     if db is None:
         db = w.db
 
-    url = 'sources/{}/footnote/{}~{}~{}/metadata'.format(db, economy, series, w.queryParam(time, 'time', db=db))
+    # note that this only supports singular footnote references at this point, although the interface suggests otherwise
+    url = 'sources/{source}/footnote/{economy}~{series}~{time}/metadata'
     try:
-        for row in w.metadata(url):
+        for row in w.metadata(url, ['series'], source=db, series=series, economy=economy, time=w.queryParam(time, 'time', db=db)):
             return row.metadata['FootNote']
     except:
         pass    # will return None then
