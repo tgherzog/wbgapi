@@ -228,7 +228,7 @@ Use the `source` object to learn about other databases and the `db` variable to 
     ENF.CONT.COEN.COST.ZS                              Enforcing contracts: Cost (% of claim)
     ...
 
-Most functions also accept a `db` parameter to specify the database as an argument
+Most functions also accept a `db` parameter to specify the database as an argument.
 
 
 ### Custom Dimensions ###
@@ -278,8 +278,6 @@ Here is how to run the same query arranged to more easily compare different vers
         201906   45222700.0   45663099.0   46076848.0   46497267.0   46969209.0
     ...
 
-Hopefully that gives you a taste and enough to get started. Use `help()` and read the docstrings for lots more examples, information, and ideas
-
 ### Metadata ###
 
 wbgapi returns metadata for series, economies and combinations:
@@ -292,6 +290,10 @@ wbgapi returns metadata for series, economies and combinations:
 or single footnotes:
 
     print(wb.data.footnote('SP.POP.TOTL', 'FRA', 2015))
+
+---
+
+Hopefully that gives you a taste and enough to get started. Use `help()` and read the docstrings for lots more examples, information, and ideas
 
 ## Customizing the Display ##
 
