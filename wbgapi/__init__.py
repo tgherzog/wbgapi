@@ -26,6 +26,7 @@ endpoint = 'https://api.worldbank.org/v2'
 lang = 'en'
 per_page = 1000          # you can increase this if you start getting 'service unavailable' messages, which can mean you're sending too many requests per minute
 db = 2
+proxies = None           # see https://requests.readthedocs.io/en/master/user/advanced/#proxies for format
 
 # The maximum URL length is 1500 chars before it reports a server error. Internally we use a smaller
 # number for head room as well as to provide for the query string
@@ -402,7 +403,9 @@ def _responseObjects(url, result, wantConcepts=False):
 def _queryAPI(url):
     '''Internal function for calling the API with sanity checks
     '''
-    response = requests.get(url)
+    global proxies
+
+    response = requests.get(url, proxies=proxies)
     if response.status_code != 200:
         raise APIError(url, response.reason, response.status_code)
 
