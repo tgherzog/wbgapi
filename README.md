@@ -293,7 +293,7 @@ or single footnotes:
 
 ---
 
-Hopefully that gives you a taste and enough to get started. Use `help()` and read the docstrings for lots more examples, information, and ideas
+Hopefully that gives you a taste and enough to get started. Use `help()` and read the docstrings for lots more examples, information, and ideas.
 
 ## Customizing the Display ##
 
