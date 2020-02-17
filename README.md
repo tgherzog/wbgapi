@@ -306,7 +306,7 @@ to DataFrame objects, which are formatted by pandas.
 ## Proxy servers ##
 
 `wbgapi.proxies` can be configured to support proxy servers. This variable is passed
-[directly to the requests module](https://requests.readthedocs.io/en/master/user/advanced/#proxies)
+[directly to the requests module](https://requests.readthedocs.io/en/master/user/advanced/#proxies).
 
     wb.proxies = {
       'http': 'http://10.10.1.10:3128',
