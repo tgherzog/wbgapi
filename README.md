@@ -193,7 +193,7 @@ Data and economy queries can be returned as pandas DataFrames. For example:
     AND       Andorra     84449.0     82427.0     79213.0     77297.0     77006.0         HIC
     ..            ...         ...         ...         ...         ...         ...         ...
 
-And then aggregate:
+And then aggregate (albeit unweighted):
 
     df.groupby('incomeLevel').mean()
                        YR2010        YR2012        YR2014        YR2016        YR2018
@@ -204,7 +204,9 @@ And then aggregate:
     UMC          4.165684e+07  4.229376e+07  4.296426e+07  4.363008e+07  4.426060e+07
 
 Of course, these DataFrames can be used for any sort of analysis and operations that pandas supports,
-and can be used with lots of various visualization libraries.
+and can be used with lots of various visualization libraries. Time series can be easily plotted by transposing a DataFrame:
+
+    wb.data.DataFrame('NY.GDP.PCAP.CD', ['BRA', 'ARG'], time=range(2000,2020),numericTimeKeys=True).transpose().plot()
 
 ### Switching databases ###
 
@@ -226,15 +228,88 @@ Use the `source` object to learn about other databases and the `db` variable to 
     ENF.CONT.COEN.COST.ZS                              Enforcing contracts: Cost (% of claim)
     ...
 
+Most functions also accept a `db` parameter to specify the database as an argument
+
+
+### Custom Dimensions ###
+
+Most databases consist of 3 dimensional concepts: `series`, `country` and `time`. But this is not always the case: several databases use `economy`, `state`
+or something else in lieu of `country` and at least one uses `year` in lieu of `time`. To make programming more intuitive, wbgapi normalizes common
+dimensions as `economy` and `time` so that you don't have to guess (this includes subnational databases, since at this point all databases capture
+all administrative levels in the same dimension).
+
+You can access a database's actual concept structure like this:
+
+    for k,v in wb.source.concepts().items():
+        print(k, v)
+
+Some databases have additional dimensions; for instance, WDI Archives (57) has a version dimension. Simply pass these as additional parameters,
+or omit them to return all features in the dimension. Python ranges work where where dimensions are numeric. For example, to retrieve population
+data for all WDI versions in 2019, do this:
+
+    wb.db = 57
+    for row in wb.data.fetch('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912)):
+      ...
+
+or:
+
+    for row in wb.data.fetch('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912), db=57):
+      ...
+
+wbgapi will create multi-index DataFrames where necessary, although you may need to fiddle with the axis configuration to get what you want.
+Here is how to run the same query arranged to more easily compare different versions of the same series:
+
+    wb.data.DataFrame('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912),axes=['economy','version','time'], db=57)
+
+                     YR2010       YR2011       YR2012       YR2013       YR2014
+    ARG 201901   41223889.0   41656879.0   42096739.0   42539925.0   42981515.0
+        201903   41223889.0   41656879.0   42096739.0   42539925.0   42981515.0
+        201904   41223889.0   41656879.0   42096739.0   42539925.0   42981515.0
+        201906   40788453.0   41261490.0   41733271.0   42202935.0   42669500.0
+    ...
+    BRA 201901  196796269.0  198686688.0  200560983.0  202408632.0  204213133.0
+        201903  196796269.0  198686688.0  200560983.0  202408632.0  204213133.0
+        201904  196796269.0  198686688.0  200560983.0  202408632.0  204213133.0
+        201906  195713635.0  197514534.0  199287296.0  201035903.0  202763735.0
+    ...
+    COL 201901   45918097.0   46406646.0   46881475.0   47342981.0   47791911.0
+        201903   45918097.0   46406646.0   46881475.0   47342981.0   47791911.0
+        201904   45918097.0   46406646.0   46881475.0   47342981.0   47791911.0
+        201906   45222700.0   45663099.0   46076848.0   46497267.0   46969209.0
+    ...
+
 Hopefully that gives you a taste and enough to get started. Use `help()` and read the docstrings for lots more examples, information, and ideas
 
-### Customzing the Display ###
+### Metadata ###
+
+wbgapi returns metadata for series, economies and combinations:
+
+    wb.series.metadata.get('SP.POP.TOTL', economies=['KEN', 'TZA'])
+
+    for i in wb.economy.metadata.get('all'):
+      print(i)
+
+or single footnotes:
+
+    print(wb.data.footnote('SP.POP.TOTL', 'FRA', 2015))
+
+## Customizing the Display ##
 
 wbgapi provides fairly good support for IPython, Jupyter Notebook, etc and will generally return HTML
 output for things like tables in those environments. HTML output is wrapped in a `<div class="wbgapi"/>`
 container so that you can customize the CSS if you so desire (for instance, I like to left-align the columns).
 The location of your custom.css varies depending on your environment. Note that this does not apply
 to DataFrame objects, which are formatted by pandas.
+
+## Proxy servers ##
+
+`wbgapi.proxies` can be configured to support proxy servers. This variable is passed
+[directly to the requests module](https://requests.readthedocs.io/en/master/user/advanced/#proxies)
+
+    wbgapi.proxies = {
+      'http': 'http://10.10.1.10:3128',
+      'https': 'http://10.10.1.10:1080',
+    }
 
 ## Limitations ##
 
