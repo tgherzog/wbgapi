@@ -143,7 +143,7 @@ class Coder(dict):
     def _repr_html_(self):
         rows = self._coder_report()
         columns = rows.pop(0)
-        return tabulate(rows, headers=columns)
+        return htmlTable(rows, headers=columns)
 
     @property
     def summary(self):
