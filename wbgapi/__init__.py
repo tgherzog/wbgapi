@@ -145,17 +145,8 @@ class Coder(dict):
         columns = rows.pop(0)
         return htmlTable(rows, headers=columns)
 
-    @property
-    def summary(self):
-        '''Prints a short report: just the economies that don't match the canonical name
-        '''
-
-        rows = self._coder_report(False)
-        columns = rows.pop(0)
-        print(tabulate(rows, tablefmt='simple', headers=columns))
-
-    def _coder_report(self, full=True):
-        return economy.coder_report(self, full)
+    def _coder_report(self):
+        return economy.coder_report(self)
 
 
 def fetch(url, params={}, concepts=False, lang=None):

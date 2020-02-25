@@ -7,11 +7,11 @@ import wbgapi as w
 import yaml
 import os
 import re
-import functools
 
 _lookup_data = None
+_coder_names = None
 
-def coder(name,debug=None):
+def coder(name, summary=False, debug=None):
     '''Return the country code for a given country name, based on common spellings and conventions.
     This function is intended to make it easier to convert country names to ISO3 codes.
 
@@ -21,6 +21,8 @@ def coder(name,debug=None):
     Arguments:
 
         name:       a country name as a string, or an iterable object of name strings
+
+        summary:    just return anomalies (names that couldn't be matched or that don't match the WBG name)
 
         debug:      a list of ISO codes for which to print debug output
 
@@ -38,7 +40,7 @@ def coder(name,debug=None):
 
         print(wbgapi.economy.lookup(['Canada', 'Toronto']))   # prints {'Canada': 'CAN', 'Toronto': None}
     '''
-    global _lookup_data
+    global _lookup_data, _coder_names
 
     def prepare(s, clean=False, magicRegex=False):
 
@@ -67,11 +69,14 @@ def coder(name,debug=None):
 
     if _lookup_data is None:
         _lookup_data = []
+        _coder_names = {}
         user_data = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), 'lookup-data.yaml'), 'r'))
 
         for row in w.fetch('country/all', lang='en'):
             if row['region']['id'] == 'NA':
                 continue # ignore aggregates
+
+            _coder_names[row['id']] = row['name']
 
             obj = user_data.get(row['id'], {})
             # convert ordinary arrays to objects - for most cases this simplifies the yaml
@@ -117,27 +122,25 @@ def coder(name,debug=None):
                 break
 
     if is_list:
+        if summary:
+            results = w.Coder(dict(filter(lambda x: x[0].lower() != _coder_names.get(x[1],'').lower() if x[1] else True, results.items())))
+
         return results
 
     return results.get(name[0])
             
-def coder_report(economies, full=True):
+def coder_report(economies):
 
-    c = {row['id']: row['name'] for row in w.fetch('country/all', lang='en') if row['region']['id'] != 'NA'}
+    global _coder_names
 
     rows = [('ORIGINAL NAME', 'WBG NAME', 'ISO_CODE')]
     for k,v in economies.items():
         if v:
-            wb_name = c.get(v, '')
-            if not full and wb_name.lower() == k.lower():
-                continue
+            wb_name = _coder_names.get(v, '')
         else:
             wb_name = ''
 
         rows.append((k, wb_name, v))
-
-    maxName1 = len( functools.reduce(lambda a,b: a if len(a) > len(b) else b, [row[0] for row in rows]) )
-    maxName2 = len( functools.reduce(lambda a,b: a if len(a) > len(b) else b, [row[1] for row in rows]) )
 
     output = []
     for row in rows:
