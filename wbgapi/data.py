@@ -231,7 +231,7 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
 
         if len(axes) > 2:
             i = [[]] * (len(axes)-1)
-            return pd.DataFrame(index=pd.MultiIndex(levels=i, codes=i))
+            return pd.DataFrame(index=pd.MultiIndex(levels=i, codes=i, names=tuple(axes[:-1])))
 
         return pd.DataFrame()
 
