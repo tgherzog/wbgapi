@@ -31,7 +31,9 @@ def coder(name, summary=False, debug=None):
         can't be ascertained.
 
         If `name` is an iterable object, the function returns a dict of country names (passed as arguments)
-        and corresponding ISO3 codes. Country names that cannot be ascertained have a value of None
+        and corresponding ISO3 codes. Country names that cannot be ascertained have a value of None. Note
+        that the return object can be treated as a dict, but is actually a subclass that prints as a nicely
+        formatted table.
 
     Examples:
         print(wbgapi.economy.lookup('Eswatini')) # prints 'SWZ'
