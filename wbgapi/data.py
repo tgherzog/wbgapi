@@ -169,7 +169,7 @@ def FlatFrame(series, economy='all', time='all', mrv=None, mrnev=None, skipBlank
 
     return df
 
-def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, flat=False, numericTimeKeys=False, timeColumns=False, params={}, db=None, **dimensions):
+def DataFrame(series, economy='all', time='all', index=None, columns=None, mrv=None, mrnev=None, skipBlanks=False, labels=False, skipAggs=False, numericTimeKeys=False, timeColumns=False, params={}, db=None, **dimensions):
     '''Retrieve a 2-dimensional pandas dataframe. 
     
     Arguments:
@@ -180,10 +180,12 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         time:               a time identifier or list-like, e.g., 'YR2015' or range(2010,2020).
                             Both element keys and values are acceptable
 
-        axes:               a list-like of at least two elements specifying the dimensions to use for the dataframe's
-                            index and column. The last element specifies the column while the others specify the
-                            index. 3 or more dimensions will produce a multi-index dataframe. If 'auto' then the
-                            function will choose dimensions for you based on your request.
+        index:              name or list of dimensions for the DataFrame's index, e.g., 'economy'. If None then the function
+                            will define the index based on your request. Note: to get a dataframe with no index
+                            (i.e., 0-based integers) call `reset_index()` with on the return value of this function.
+
+        columns:            name of the dimension for the DataFrame's columns, e.g., 'series'. If None then the function
+                            will define columns based on your request.
 
         mrv:                return only the specified number of most recent values (same time period for all economies)
 
@@ -194,8 +196,6 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         labels:             include the dimension name for rows
 
         skipAggs:           skip aggregates
-
-        flat:               same as calling FlatFrame()
 
         numericTimeKeys:    store the time object by value (e.g., 2014) instead of key ('YR2014') if value is numeric
 
@@ -227,11 +227,11 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         at some point, so that mrv behavior is more intuitive for data discovery
     '''
 
-    def frame(axes):
+    def frame(index):
 
-        if len(axes) > 2:
-            i = [[]] * (len(axes)-1)
-            return pd.DataFrame(index=pd.MultiIndex(levels=i, codes=i, names=tuple(axes[:-1])))
+        if len(index) > 1:
+            i = [[]] * len(index)
+            return pd.DataFrame(index=pd.MultiIndex(levels=i, codes=i, names=tuple(index)))
 
         return pd.DataFrame()
 
@@ -246,27 +246,37 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
         # not necessary to pass db since we don't actually care about the parameters just the count of them
         return len(w.queryParam(x).split(';')) == 1
 
-
-    if flat:
-        return FlatFrame(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=labels, skipAggs=skipAggs, params=params, db=db, **dimensions)
-
     if pd is None:
         raise ModuleNotFoundError('you must install pandas to use this feature')
 
-    if type(axes) is str and axes == 'auto':
-        axes = ['economy', 'series', 'time']
-        for k,v in w.source.concepts(db).items():
-            if k not in axes:
-                axes.insert(0, k)
+    # set up the axes by looking at the index/column parameters
+    concepts = ['economy','series','time']
+    for k,v in w.source.concepts(db).items():
+        if k not in concepts:
+            concepts.insert(0, k)
+
+    if type(index) is str:
+        index = [index]
+
+    if index is None or columns is None:
+        # we need to infer at least one dimension
 
         dimensions_ = {'series': series, 'economy': economy, 'time': time}
         dimensions_.update(dimensions)
 
-        x = axes.copy()
+        axes = concepts.copy()
+
+        # now we reduce axes by eliminating any dimension consisting of 
+        # one element not defined in the calling parameters, with a stop
+        # if we reduce to 2 dimensions
+        x = concepts.copy()
         x.reverse()
         for k in x:
             if len(axes) == 2:
                 break
+
+            if k == columns or (type(index) is list and k in index):
+                continue
 
             values = dimensions_.get(k, 'all')
             if k == 'time' and (mrv == 1 or mrnev == 1 or is_single(values)):
@@ -277,28 +287,54 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
             elif is_single(values):
                 axes.remove(k)
 
-    # sanity check: don't include time column if it's a dimension
-    if len(axes) < 2:
-        raise ValueError('axes must be \'auto\' or a list of at least two concepts')
+        if columns is None and index is None:
+            columns = axes.pop(-1)
+            index = axes
+        elif columns is None:
+            # try to guess a column based on what index doesn't define
+            x = list(filter(lambda x: x not in index, axes))
+            if len(x) > 0:
+                columns = x[-1]
+            elif (set(concepts) - set(list)) > 0:
+                # index has claimed all non-singular dimensions, so set columns from the full concepts list
+                x = list(filter(lambda x: x not in index, concepts))
+                columns = x[-1]
+            else:
+                # index is the same as the concepts list. That's not allowed
+                raise ValueError('one dimension must be a column')
 
-    if 'time' in axes or timeColumns == 'auto':
+        elif index is None:
+            axes.remove(columns)
+            index = axes
+
+    # sanity checks
+    if type(columns) is not str or columns not in concepts:
+        raise ValueError('columns must be None or a dimension')
+
+    if type(index) is not list or len(set(index) - set(concepts)) > 0:
+        raise ValueError('index must be None or a dimension list')
+
+    if columns in index:
+        raise ValueError('columns cannot be an element in index')
+
+    if columns == 'time' or 'time' in index or timeColumns == 'auto':
         timeColumns = False
 
     # for now let's see if it works to build the dataframe dynamically
-    df = frame(axes)
+    df = frame(index)
     dummy = pd.Series()    # empty series - never assigned actual values
     ts_suffix = ':T'
     concepts = w.source.concepts(db)
     if labels:
         # create a separate dataframe for labels so that we can control the column position below
-        df2 = frame(axes)
+        df2 = frame(index)
 
     for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params, db=db, **dimensions):
-        column_key = row[axes[-1]]['id']
-        if len(axes) == 2:
-            index_key = row[axes[0]]['id']
+        column_key = row[columns]['id']
+        if len(index) == 1:
+            index_key = row[index[0]]['id']
         else:
-            index_key = tuple(map(lambda x: row[x]['id'], axes[0:-1]))
+            index_key = tuple(map(lambda x: row[x]['id'], index))
 
         # this logic only assigns values to locations that don't yet exist. First observations thus take precedent over subsequent ones
         if pd.isna(df.get(column_key, dummy).get(index_key)):
@@ -307,7 +343,7 @@ def DataFrame(series, economy='all', time='all', axes='auto', mrv=None, mrnev=No
                 df.loc[index_key, column_key + ts_suffix] = row['time']['value']
 
             if labels:
-                for i in axes[0:-1]:
+                for i in index:
                     df2.loc[index_key, concepts[i]['value']] = row[i]['value']
         
     df.sort_index(axis=0,inplace=True)
