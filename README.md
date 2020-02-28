@@ -208,6 +208,23 @@ and can be used with lots of various visualization libraries. Time series can be
 
     wb.data.DataFrame('NY.GDP.PCAP.CD', ['BRA', 'ARG'], time=range(2000,2020),numericTimeKeys=True).transpose().plot()
 
+Use pandas' `reset_index` option to fetch unindex columns of indicators:
+
+    wb.data.DataFrame(['SP.POP.TOTL', 'NY.GDP.PCAP.CD', 'EN.ATM.CO2E.KT'],time=range(2000,2010),axes=['time','economy','series'],numericTimeKeys=True).reset_index()
+          time economy  EN.ATM.CO2E.KT  NY.GDP.PCAP.CD  SP.POP.TOTL
+    0     2000     ABW        2379.883    20620.700626      90853.0
+    1     2000     AFG         773.737             NaN   20779953.0
+    2     2000     AGO        9541.534      556.836318   16395473.0
+    3     2000     ALB        3021.608     1126.683318    3089027.0
+    4     2000     AND         524.381    21936.530101      65390.0
+    ...    ...     ...             ...             ...          ...
+    2635  2009     XKX             NaN     3209.711460    1761474.0
+    2636  2009     YEM       24561.566     1116.084594   22516460.0
+    2637  2009     ZAF      503112.400     5862.797340   50477011.0
+    2638  2009     ZMB        2508.228     1159.907762   13215139.0
+    2639  2009     ZWE        5603.176      771.598786   12526968.0
+
+
 ### Switching databases ###
 
 Use the `source` object to learn about other databases and the `db` variable to change the global database target:
@@ -290,6 +307,20 @@ wbgapi returns metadata for series, economies and combinations:
 or single footnotes:
 
     print(wb.data.footnote('SP.POP.TOTL', 'FRA', 2015))
+
+### Resolving Country Names ###
+
+wbgapi includes utility function that resolves common spellings of country names to the ISO3 codes used by the API. The
+return from this function is a "dict" subclass that provides a nice report, but can still be processed programmatically:
+
+    wb.economy.coder(['Argentina', 'Swaziland', 'South Korea', 'England', 'Chicago'])
+    ORIGINAL NAME    WBG NAME        ISO_CODE
+    ---------------  --------------  ----------
+    Argentina        Argentina       ARG
+    Swaziland        Eswatini        SWZ
+    South Korea      Korea, Rep.     KOR
+    England          United Kingdom  GBR
+    Chicago
 
 ---
 
