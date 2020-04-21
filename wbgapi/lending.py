@@ -17,6 +17,10 @@ def list(id='all'):
 
     Example:
         lendingGroups = {row['id']: row['value'] for row in wbapi.lending.list()}
+            
+    Notes:
+        The lending group list is global to the entire API and is not specific to the current database.
+
     '''
 
     for row in w.fetch('lendingtype/' + w.queryParam(id)):
@@ -74,6 +78,10 @@ def info(id='all'):
 
     Returns:
         None
+            
+    Notes:
+        The lending group list is global to the entire API and is not specific to the current database.
+
     '''
 
     return w.Featureset(list(id))

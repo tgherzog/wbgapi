@@ -17,6 +17,10 @@ def list(id='all'):
 
     Example:
         incomeGroups = {row['id']: row['value'] for row in wbapi.income.list()}
+
+    Notes:
+        The income group list is global to the entire API and is not specific to the current database.
+
     '''
 
     for row in w.fetch('incomelevel/' + w.queryParam(id)):
@@ -74,6 +78,10 @@ def info(id='all'):
 
     Returns:
         None
+
+    Notes:
+        The income group list is global to the entire API and is not specific to the current database.
+
     '''
 
     return w.Featureset(list(id))

@@ -21,6 +21,9 @@ def list(id='all',group=None):
     Example:
         regions = {row['code']: row['name'] for row in wbgapi.region.list()}
             
+    Notes:
+        The region list is global to the entire API and is not specific to the current database.
+
     '''
 
     params = {'type': group} if group else {}
@@ -90,6 +93,10 @@ def info(id='all',group=None):
 
     Returns:
         None
+            
+    Notes:
+        The region list is global to the entire API and is not specific to the current database.
+
     '''
 
     return w.Featureset(list(id, group=group), ['code', 'name'])
