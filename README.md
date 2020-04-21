@@ -65,8 +65,11 @@ WBGAPI includes extenstive docstrings with lots of examples:
 
 Every element type is its own object: source, series, region, time,
 etc. Note that "countries" and aggregates are accessed through the "economy"
-object. All World Bank databases have a series, time, and economy dimension,
+object and the time dimension is always accessed through the time object.
+All World Bank databases have a series, time, and economy dimension,
 although the API is not consistent in its concept scheme across databases.
+For example, in some databases the economy dimension is called 'economy' or 'province'
+instead of 'country' and the time dimension is sometimes called 'year.'
 The WBGAPI module saves you most of that headache.
 
 Objects tend to use a common set of functions which you'll use heavily:
@@ -208,9 +211,9 @@ and can be used with lots of various visualization libraries. Time series can be
 
     wb.data.DataFrame('NY.GDP.PCAP.CD', ['BRA', 'ARG'], time=range(2000,2020),numericTimeKeys=True).transpose().plot()
 
-Use pandas' `reset_index` option to fetch unindex columns of indicators:
+Use pandas' `reset_index` option to fetch unindexed columns of indicators:
 
-    wb.data.DataFrame(['SP.POP.TOTL', 'NY.GDP.PCAP.CD', 'EN.ATM.CO2E.KT'],time=range(2000,2010),axes=['time','economy','series'],numericTimeKeys=True).reset_index()
+    wb.data.DataFrame(['SP.POP.TOTL', 'NY.GDP.PCAP.CD', 'EN.ATM.CO2E.KT'],time=range(2000,2010), numericTimeKeys=True, columns='series').reset_index()
           time economy  EN.ATM.CO2E.KT  NY.GDP.PCAP.CD  SP.POP.TOTL
     0     2000     ABW        2379.883    20620.700626      90853.0
     1     2000     AFG         773.737             NaN   20779953.0
@@ -245,7 +248,7 @@ Use the `source` object to learn about other databases and the `db` variable to 
     ENF.CONT.COEN.COST.ZS                              Enforcing contracts: Cost (% of claim)
     ...
 
-Most functions also accept a `db` parameter to specify the database as an argument.
+Most functions also accept a `db` parameter to specify the database as an argument. This option will override the global option.
 
 
 ### Custom Dimensions ###
@@ -273,10 +276,10 @@ or:
     for row in wb.data.fetch('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912), db=57):
       ...
 
-wbgapi will create multi-index DataFrames where necessary, although you may need to fiddle with the axis configuration to get what you want.
+wbgapi will create multi-index DataFrames where necessary, although you may need to fiddle with the index and column parameters to get what you want.
 Here is how to run the same query arranged to more easily compare different versions of the same series:
 
-    wb.data.DataFrame('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912),axes=['economy','version','time'], db=57)
+    wb.data.DataFrame('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912), index=['economy', 'time'], db=57)
 
                      YR2010       YR2011       YR2012       YR2013       YR2014
     ARG 201901   41223889.0   41656879.0   42096739.0   42539925.0   42981515.0
@@ -347,7 +350,7 @@ to DataFrame objects, which are formatted by pandas.
 ## Limitations ##
 
 * WBGAPI requires Python 3.x (it's 2020, and the [sun has set on Python 2.x][sunset]). Time
-  to move on.
+  to move on if you haven't already.
 
 * WBGAPI is fully multi-lingual. However, as of this writing, the API endpoints it depends
   on are returning English-only, which means that in practice the module is English-only as well.
