@@ -14,6 +14,7 @@ from . import time
 from . import region
 from . import income
 from . import lending
+from . import topic
 from . import data
 try:
     import pandas as pd

@@ -1,5 +1,7 @@
 
-'''Access information about World Bank income groups
+'''Access information about World Bank income groups. This works best with the WDI (source=2)
+and other databases that share the same list of economies. It will probably not work
+well with subnational databases or region-specific ones.
 '''
 import wbgapi as w
 import builtins
