@@ -41,15 +41,7 @@ Other key features:
 
 ## Installation ##
 
-WBGAPI is currently in alpha development and is not yet on PyPl. But you can still use
-pip to install directly from github:
-
-    pip install git+https://github.com/tgherzog/wbgapi.git
-
-If you use Anaconda, you may have to download the package and install it locally:
-
-1. Download this repository as a ZIP file
-2. Run pip like this: `pip install [local-path-to]wbgapi-master.zip`
+    pip install wbgapi
 
 ## Quick Start ##
 

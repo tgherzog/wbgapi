@@ -6,10 +6,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="wbgapi",
-    version="1.0",
+    version="1.0.1",
     author="Tim Herzog",
     # author_email="author@example.com",
-    description="wbgapi provides a comprehensive interface to the World Bank's daeta and metadata APIs",
+    description="wbgapi provides a comprehensive interface to the World Bank's data and metadata APIs",
     license='MIT',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -20,7 +20,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
     ],
     install_requires=['requests', 'PyYAML', 'tabulate'],
     python_requires='>=3.0',
