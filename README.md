@@ -5,7 +5,7 @@ WBGAPI provides modern, pythonic access to the World Bank's data API.
 It is designed both for data novices and data scientist types. 
 WBGAPI tries to shield users from some of the confusing ideosyncrasies
 of the World Bank's API while remaining consistent and intuitive for
-those who are familiar with its basic data structures. More on that later.
+those who are familiar with its basic data structures.
 
 WBGAPI differs from other modules in a few respects. The most significant
 is that it queries databases individually instead of collectively. To appreciate
@@ -13,8 +13,8 @@ the difference, consider this API request:
 
 https://api.worldbank.org/v2/indicator
 
-As of this writing, this request returns 17,328 resulting indicators. But what
-this obscures is that these indicators are stored in 57 separate databases,
+As of this writing, this request returns 17,473 resulting indicators. But what
+this obscures is that these indicators are stored in 61 separate databases,
 updated on different schedules, and covering different time spans and country
 groups. Many indicators appear in more than one database. While it's possible
 to use the API to get more precise results, it's not always easy to understand
@@ -23,7 +23,8 @@ what you're requesting or where it's actually coming from.
 WBGAPI fixes this issue by only querying a single database at a time using a [relatively
 new set of endpoints][beta-endpoints]. This gives users an accurate picture
 of both the data, dimensions and features of that database. The default database
-is the World Development Indicators (WDI) but you can switch databases at any time.
+is the World Development Indicators (WDI) but you can target different databases
+either globally or with each request.
 
 Other key features:
 
@@ -36,8 +37,6 @@ Other key features:
 * Very "pythonic": use of generators, ranges and sets make data access easy and elegant
 
 * Extensive [pandas][pandas] support (optional)
-
-* Multi-lingual support (sort of. See "Limitations" section below)
 
 ## Installation ##
 
@@ -116,9 +115,6 @@ Use `get()` and `list()` to access the underlying objects:
     stuff = {i['id']: i['value'] for i in wb.series.list(['SP.POP.TOTL', 'SI.POV.NAHC'])}
     stuff
     {'SP.POP.TOTL': 'Population, total', 'SI.POV.NAHC': 'Poverty headcount ratio at national poverty lines (% of population)'}
-
-API veterans might notice that the objects use `value` for element names instead of `name`. That's an artifact of the "advanced" queries
-mentioned previously.
 
 Any single identifier or iterable object can generally be passed as an argument to select series, economies, regions, and so forth.
 Here's an easy way to get a list of high-income countries:
@@ -259,8 +255,7 @@ Some databases have additional dimensions; for instance, WDI Archives (57) has a
 or omit them to return all features in the dimension. Python ranges work where where dimensions are numeric. For example, to retrieve population
 data for all WDI versions in 2019, do this:
 
-    wb.db = 57
-    for row in wb.data.fetch('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912)):
+    for row in wb.data.fetch('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912), wb.db=57):
       ...
 
 or:
@@ -271,7 +266,7 @@ or:
 wbgapi will create multi-index DataFrames where necessary, although you may need to fiddle with the index and column parameters to get what you want.
 Here is how to run the same query arranged to more easily compare different versions of the same series:
 
-    wb.data.DataFrame('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912), index=['economy', 'time'], db=57)
+    wb.data.DataFrame('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912), index=['economy', 'version'], db=57)
 
                      YR2010       YR2011       YR2012       YR2013       YR2014
     ARG 201901   41223889.0   41656879.0   42096739.0   42539925.0   42981515.0

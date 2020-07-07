@@ -10,3 +10,13 @@ class Region(dict):
     def members(self):
         return members(self['code'])
 
+Other potentially useful, not-well-docuented API parameters:
+
+NB: I don't think any of these have default or implicit values
+
+downloadformat=csv|xml|excel - download a complete data file for a topic, indicator or country. Delivered as a ZIP file with
+                                     separate files for metadata
+
+filetype=data                - with downloadformat, download the original file format instead of ZIP with no metadata
+
+HREQ=(y|n)                   - with downloadformat, omit the metadata headers so the first row is the column names (csv and excel only)

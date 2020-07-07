@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="wbgapi",
-    version="1.0.1",
+    version="1.0.2",
     author="Tim Herzog",
     # author_email="author@example.com",
     description="wbgapi provides a comprehensive interface to the World Bank's data and metadata APIs",
