@@ -53,7 +53,8 @@ def get(db=None):
     return w.get(_sourceurl(db), {'databid': 'y'})
 
 def concepts(db=None):
-    '''Retrieve the concepts for the specified database.
+    '''Retrieve the concepts for the specified database. This function also implements
+    support for alternate dimension names for the 3 primary dimensions
 
     Arguments:
         db:     the database ID (e.g., 2=WDI). Default to the global database
@@ -80,10 +81,14 @@ def concepts(db=None):
     c = {}
     for row in w.fetch(url, concepts=True):
         key = urllib.parse.quote(row['id']).lower()
-        if key in ['country', 'economy', 'admin%20region', 'states', 'provinces']:
+        # there's currently an extra space at the end of "receiving countries" - we support a trimmed version
+        # in the event this gets quietly fixed someday
+        if key in ['country', 'admin%20region', 'states', 'provinces', 'receiving%20countries%20', 'receiving%20countries']:
             id = 'economy'
-        elif key in ['time', 'year']:
+        elif key in ['year']:
             id = 'time'
+        elif key in ['indicator']:
+            id = 'series'
         else:
             id = key
         c[id] = {'key': key, 'value': row['value']}
