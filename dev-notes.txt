@@ -22,3 +22,15 @@ filetype=data                - with downloadformat, download the original file f
 HREQ=(y|n)                   - with downloadformat, omit the metadata headers so the first row is the column names (csv and excel only)
 
 databid:                     - with /v2/en/sources, this will include the internal database ID you need for Databank links
+
+## Steps to update in pypi.org ##
+
+1. Update setup.py (i.e. version number) and commit changes
+
+2. Run from project directory (builds dist/*):
+
+   python3 setup.py sdist bdist_wheel
+
+3. Run from the project directory:
+
+   python3 -m twine upload dist/*
