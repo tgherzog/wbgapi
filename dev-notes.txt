@@ -20,3 +20,5 @@ downloadformat=csv|xml|excel - download a complete data file for a topic, indica
 filetype=data                - with downloadformat, download the original file format instead of ZIP with no metadata
 
 HREQ=(y|n)                   - with downloadformat, omit the metadata headers so the first row is the column names (csv and excel only)
+
+databid:                     - with /v2/en/sources, this will include the internal database ID you need for Databank links

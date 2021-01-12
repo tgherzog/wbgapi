@@ -413,7 +413,7 @@ def _queryAPI(url):
 
     return (hdr, result)
 
-_latest_concept_cache = {}
+_concept_mrv_cache = {}
 
 def queryParam(arg, concept=None, db=None):
     ''' Prepare parameters for an API query. This is a core function
@@ -434,16 +434,16 @@ def queryParam(arg, concept=None, db=None):
         db = globals()['db']
 
     if type(arg) is str and arg == 'mrv' and concept:
-        global _latest_concept_cache
+        global _concept_mrv_cache
 
-        if _latest_concept_cache.get(db) is None:
-            _latest_concept_cache[db] = {}
+        if _concept_mrv_cache.get(db) is None:
+            _concept_mrv_cache[db] = {}
 
-        if _latest_concept_cache[db].get(concept) is None:
-            for row in source.features(concept):
-                _latest_concept_cache[db][concept] = row['id']
+        if _concept_mrv_cache[db].get(concept) is None:
+            for row in source.features(concept, db=db):
+                _concept_mrv_cache[db][concept] = row['id']
 
-        arg = _latest_concept_cache[db].get(concept, '')
+        arg = _concept_mrv_cache[db].get(concept, '')
         
     if type(arg) is str or type(arg) is int:
         arg = [arg]

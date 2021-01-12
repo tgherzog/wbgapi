@@ -63,7 +63,7 @@ def periods(db=None):
     v = _time_values.get(db)
     if v is None:
         v = {}
-        for row in w.source.features('time', 'all'):
+        for row in w.source.features('time', 'all', db=db):
             v[row['value']] = row['id']
 
         _time_values[db] = v
