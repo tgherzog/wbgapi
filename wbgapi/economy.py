@@ -36,13 +36,19 @@ _class_data = None
 # translated names of regions and cities. This is keyed by language and code
 _localized_metadata = {}
 
-def list(id='all',labels=False,skipAggs=False, db=None):
+def list(id='all', q=None, labels=False, skipAggs=False, db=None):
     '''Return a list of economies in the current database
 
     Arguments:
         id:         an economy identifier or list-like
 
+        q:          search string (on economy name)
+
+        labels:     return both codes and labels for regions, income and lending groups
+
         skipAggs:   skip aggregates
+
+        db:         database: pass None to access the global database
 
     Returns:
         a generator object
@@ -54,10 +60,13 @@ def list(id='all',labels=False,skipAggs=False, db=None):
     '''
     global _class_data
 
+    if q:
+        q = q.lower()
+
     update_caches()
     for row in w.source.features('economy', w.queryParam(id, 'economy', db=db), db=db):
         _build(row,labels)
-        if skipAggs == False or row['aggregate'] == False:
+        if (skipAggs == False or row['aggregate'] == False) and (q is None or q in row['value'].lower()):
             yield row
 
 def get(id,labels=False, db=None):
@@ -224,16 +233,20 @@ def iso2(code):
     update_caches()
     return _iso2Codes.get(code)
 
-def info(id='all',skipAggs=False, db=None):
+def info(id='all',q=None, skipAggs=False, db=None):
     '''Print a user report of economies
 
     Arguments:
         id:         an economy identifier or list-like
 
+        q:          search string (on economy name)
+
         skipAggs:   skip aggregates
+
+        db:         database: pass None to access the global database
 
     Returns:
         None
     '''
 
-    return w.Featureset(list(id, skipAggs=skipAggs, db=db), ['id', 'value', 'region', 'incomeLevel'])
+    return w.Featureset(list(id, q=q, skipAggs=skipAggs, db=db), ['id', 'value', 'region', 'incomeLevel'])

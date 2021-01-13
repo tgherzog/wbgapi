@@ -6,11 +6,13 @@ import wbgapi as w
 from . import series_metadata as metadata
 import builtins
 
-def list(id='all', topic=None, db=None):
+def list(id='all', q=None, topic=None, db=None):
     '''Return a list of series elements in the current database
 
     Arguments:
         id:     a series identifier (i.e., CETS code) or list-like
+
+        q:      search string (on series name)
 
         topic:  topic ID or list-like
 
@@ -33,7 +35,13 @@ def list(id='all', topic=None, db=None):
         else:
             id = topics
 
-    return w.source.features('series', w.queryParam(id, 'series', db=db), db=db)
+    if q:
+        q = q.lower()
+
+    for row in w.source.features('series', w.queryParam(id, 'series', db=db), db=db):
+        if q is None or q in row['value'].lower():
+            yield row
+
 
 def get(id, db=None):
     '''Retrieve a specific series object
@@ -52,12 +60,14 @@ def get(id, db=None):
 
     return w.source.feature('series', id, db=db)
 
-def info(id='all', topic=None, db=None):
+def info(id='all', q=None, topic=None, db=None):
     '''Print a user report of series. This can be time consuming
     for large databases like the WDI if 'all' series are requested.
 
     Arguments:
         id:         a series identifier or list-like of identifiers
+
+        q:          search string (on series name))
 
         topic:      topic ID or list-like
 
@@ -67,4 +77,4 @@ def info(id='all', topic=None, db=None):
         None
     '''
 
-    return w.Featureset(list(id, topic=topic, db=db))
+    return w.Featureset(list(id, q=q, topic=topic, db=db))

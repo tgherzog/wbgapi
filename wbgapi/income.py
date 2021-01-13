@@ -6,11 +6,13 @@ well with subnational databases or region-specific ones.
 import wbgapi as w
 import builtins
 
-def list(id='all'):
+def list(id='all', q=None):
     '''Return a list of income groups
 
     Arguments:
         id:         an income group identifier or list-like of identifiers
+
+        q:          search string (on income group name)
 
     Returns:
         a generator object
@@ -23,8 +25,12 @@ def list(id='all'):
 
     '''
 
+    if q:
+        q = q.lower()
+
     for row in w.fetch('incomelevel/' + w.queryParam(id)):
-        yield row
+        if q is None or q in row['value'].lower():
+            yield row
 
 def get(id):
     '''Retrieve the specified income group
@@ -70,11 +76,13 @@ def Series(id='all',name='IncomeGroupName'):
 
     return w.pandasSeries(builtins.list(list(id)), name=name)
 
-def info(id='all'):
+def info(id='all', q=None):
     '''Print a user report of income groups
 
     Arguments:
         id:         an income group identifier or list-like of identifiers
+
+        q:          search string (on income group name)
 
     Returns:
         None
@@ -84,4 +92,4 @@ def info(id='all'):
 
     '''
 
-    return w.Featureset(list(id))
+    return w.Featureset(list(id, q=q))

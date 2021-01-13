@@ -17,11 +17,13 @@ import builtins
 _concepts = {}
 _metadata_flags = {}
 
-def list(id='all'):
+def list(id='all', q=None):
     '''Return a list of databases
 
     Arguments:
         id:     a database identifier or list-like
+
+        q:      search string (on source name)
 
     Returns:
         a generator object
@@ -35,7 +37,12 @@ def list(id='all'):
     if not id:
         return []
 
-    return w.fetch(_sourceurl(id), {'databid': 'y'})
+    if q:
+        q = q.lower()
+
+    for row in w.fetch(_sourceurl(id), {'databid': 'y'}):
+        if q is None or q in row['name'].lower():
+            yield row
 
 def get(db=None):
     '''Retrieve the record for a single database
@@ -170,17 +177,19 @@ def has_metadata(db=None):
 
     return m
 
-def info(id='all'):
+def info(id='all', q=None):
     '''Print a user report of databases
 
     Arguments:
         id:         a database identifier or list-like
 
+        q:          search string (on source name)
+
     Returns:
         None
     '''
     
-    return w.Featureset(list(id), ['id', 'name', 'lastupdated'])
+    return w.Featureset(list(id, q=q), ['id', 'name', 'lastupdated'])
 
 def _sourceurl(db):
     '''Internal function: returns the URL for fetching database objects

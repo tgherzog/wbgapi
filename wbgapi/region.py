@@ -6,11 +6,13 @@ well with subnational databases or region-specific ones.
 import wbgapi as w
 import builtins
 
-def list(id='all',group=None):
+def list(id='all', q=None, group=None):
     '''Return a list of regions
 
     Arguments:
         id:         a region identifier or list-like of identifiers
+
+        q:          search string (on region name)
 
         group:      subgroup to return. Can be one of: 'admin', 'geo', 'allincomelevels', 'demodividend', 'smallstates', 'other'
                     NB: technically possible to pass 'lending' but the returned values generally aren't useful
@@ -27,8 +29,12 @@ def list(id='all',group=None):
     '''
 
     params = {'type': group} if group else {}
+    if q:
+        q = q.lower()
+
     for row in w.fetch('region/' + w.queryParam(id), params):
-        yield row
+        if q is None or q in row['name'].lower():
+            yield row
 
 def get(id):
     '''Retrieve the specified region
@@ -83,11 +89,13 @@ def Series(id='all', group=None, name='RegionName'):
 
     return w.pandasSeries(builtins.list(list(id, group=group)), key='code',value='name', name=name)
 
-def info(id='all',group=None):
+def info(id='all', q=None, group=None):
     '''Print a user report of regions.
 
     Arguments:
         id:         a region identifier or list-like of identifiers
+
+        q:          search string (on region name)
 
         group:      subgroup to return. See list() for possible values
 
@@ -99,4 +107,4 @@ def info(id='all',group=None):
 
     '''
 
-    return w.Featureset(list(id, group=group), ['code', 'name'])
+    return w.Featureset(list(id, q=q, group=group), ['code', 'name'])

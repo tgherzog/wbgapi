@@ -14,11 +14,13 @@ import builtins
 # this is an array of reverse value lookup tables
 _time_values = {}
 
-def list(id='all', db=None):
+def list(id='all', q=None, db=None):
     '''Return a list of time elements in the current database
 
     Arguments:
         id:     a time identifier or list-like
+
+        q:      search string (on value name)
 
         db:     database; pass None to access the global database
 
@@ -31,7 +33,12 @@ def list(id='all', db=None):
             print(elem['id'], elem['value'])
     '''
 
-    return w.source.features('time', w.queryParam(id, 'time', db=db), db=db)
+    if q:
+        q = q.lower()
+
+    for row in  w.source.features('time', w.queryParam(id, 'time', db=db), db=db):
+        if q is None or q in row['value'].lower():
+            yield row
 
 def get(id, db=None):
     '''Retrieve the specified time element
@@ -70,11 +77,13 @@ def periods(db=None):
 
     return v
 
-def info(id='all', db=None):
+def info(id='all', q=None, db=None):
     '''Print a user report of time features
 
     Arguments:
         id:         a time identifier or list-like
+
+        q:          search string (on value name)
 
         db:         database; pass None to access the global database
 
@@ -82,4 +91,4 @@ def info(id='all', db=None):
         None
     '''
 
-    return w.Featureset(list(id, db=db))
+    return w.Featureset(list(id, q=q, db=db))
