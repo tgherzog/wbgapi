@@ -49,9 +49,10 @@ class URLError(Exception):
     pass
 
 class Metadata():
-    def __init__(self,concept,id):
+    def __init__(self,concept,id,name):
         self.concept = concept
         self.id = id
+        self.name = name
         self.metadata = {}
 
     def __repr__(self):
@@ -59,7 +60,11 @@ class Metadata():
         def segment(d):
             return '\n--------\n'.join(['{}: {}'.format(k, v) for k,v in d.items()]) + '\n'
             
-        s = '========\n{}: {}\n\n'.format(self.concept, self.id) +  segment(self.metadata)
+        label = self.id
+        if self.name:
+            label += ', ' + self.name
+
+        s = '========\n{}: {}\n\n'.format(self.concept, label) +  segment(self.metadata)
 
         subsets = {'series': 'Economy-Series', 'economies': 'Series-Economy', 'time': 'Series-Time'}
         for k,v in subsets.items():
@@ -72,8 +77,10 @@ class Metadata():
 
     def _repr_html_(self):
 
-        def segment(concept, meta, id=None):
-            if id:
+        def segment(concept, meta, id=None, name=None):
+            if id and name:
+                s = '<h4>{}: {}, {}</h4>'.format(concept, id, name)
+            elif id:
                 s = '<h4>{}: {}</h4>'.format(concept, id)
             else:
                 s = '<h5>{}</h5>'.format(concept)
@@ -83,9 +90,9 @@ class Metadata():
                 rows.append([k, v])
 
             # here we don't call htmlTable because we wrap the entire output in a <div/>
-            return s + tabulate(rows, tablefmt='html', headers=['field', 'value'])
+            return s + tabulate(rows, tablefmt='html', headers=['Field', 'Value'])
 
-        s = '<div class="wbgapi">' + segment(self.concept, self.metadata, id=self.id)
+        s = '<div class="wbgapi">' + segment(self.concept, self.metadata, id=self.id, name=self.name)
         subsets = {'series': 'Economy-Series', 'economies': 'Series-Economy', 'time': 'Series-Time'}
         for k,v in subsets.items():
             if hasattr(self, k):
@@ -96,6 +103,56 @@ class Metadata():
         return s + '</div>'
 
 
+class MetadataCollection():
+    def __init__(self, brief=False):
+        self.metadata = {}
+        self.brief = brief
+
+    def append(self, meta):
+        '''Append a Metadata object to our store
+        '''
+
+        if meta.concept not in self.metadata:
+            self.metadata[meta.concept] = []
+
+        self.metadata[meta.concept].append(meta)
+
+    def brief_table(self, tablefmt):
+        rows = []
+        for concept in self.metadata.values():
+            for elem in concept:
+                rows.append([elem.concept, elem.id, elem.name])
+
+        return tabulate(rows, tablefmt=tablefmt, headers=['Concept', 'ID', 'Name'])
+        
+    def __repr__(self):
+        s = ''
+        
+        if self.brief:
+            return self.brief_table('simple')
+
+        for concept in self.metadata.values():
+            for elem in concept:
+                s += elem.__repr__()
+
+        return s
+
+    def _repr_html_(self):
+        s = '<div class="wbgapi">'
+        if self.brief:
+            s += self.brief_table('html')
+        else:
+            for concept,hits in self.metadata.items():
+                s += '<h4>{}</h4>'.format(concept)
+                rows = []
+                for metadata in hits:
+                    for k,v in metadata.metadata.items():
+                        rows.append([metadata.id, metadata.name, k, v])
+
+                s += tabulate(rows, tablefmt='html', headers=['ID', 'Name', 'Field', 'Value'])
+
+        return s + '</div>'
+        
 class Featureset():
     def __init__(self, items, columns=None):
         ''' can be initialized with any iterable
@@ -307,34 +364,62 @@ def metadata(url, variables, concepts='all', **kwargs):
         for var in concept['variable']:
             id = var['id']
             for field in var['metatype']:
-                yield (concept['id'], var['id'], field)
+                yield (concept['id'], var['id'], var.get('name'), field)
     
-    m = Metadata(None,None)
+    m = Metadata(None,None,None)
     for row in refetch(url, variables, concepts=True, **kwargs):
         if concepts and row['id'] not in concepts:
             continue
 
-        for (concept_name,variable_id,field) in metafield(row):
+        for (concept_name,variable_id,variable_name,field) in metafield(row):
             if concept_name != m.concept or variable_id != m.id:
                 if m.concept:
                     yield m
 
-                m = Metadata(concept_name, variable_id)
+                m = Metadata(concept_name, variable_id, variable_name)
             
             m.metadata[field['id']] = field['value']
 
     if m.concept:
         yield m
 
-def search(q, concepts='all', db=None):
-    ''' search database metadata for matching text.
+def search(q, footnotes='none', brief=False, db=None):
+    '''search database metadata and return results as a print-friendly object
 
     Arguments:
-        url:        url with tokens, as per refetch()
+        q:          search term
 
-        concepts:   Name or list-like of the concepts to return: 'all' for all concepts
+        footnotes:  how to treat footnotes: 'include', 'only', or 'none'
 
-        **kwargs:   Remaining arguments to pass to refetch (must include varables for tokens in url)
+        db:         database; pass None to access the global database
+
+    Returns:
+        a print-friendly object
+
+    Notes:
+        This function just provides a print-friendly front end to search2. If you need to
+        access search results programmatically, call search2 directly.
+
+    Examples:
+        wbgapi.search('fossil fuels')
+    '''
+
+    result = MetadataCollection(brief=brief)
+
+    for row in search2(q, footnotes=footnotes, db=db):
+        result.append(row)
+
+    return result
+
+def search2(q, footnotes='none',  db=None):
+    ''' search database metadata for matching text, returning a generator
+
+    Arguments:
+        q:          search term
+
+        footnotes:  how to treat footnotes: 'include', 'only', or 'none'
+
+        db:         database; pass None to access the global database
 
     Returns:
         a generator that provides Metadata objects (same as metadata())
@@ -344,7 +429,7 @@ def search(q, concepts='all', db=None):
         is that the metadata property contains matching metadata fields and values.
 
     Examples:
-        for row in wbgapi.search('fossil fuels'):
+        for row in wbgapi.search2('fossil fuels'):
             print(row)
 
     '''
@@ -352,8 +437,10 @@ def search(q, concepts='all', db=None):
     if db is None:
         db = globals()['db']
 
-    for row in metadata('sources/{source}/search/{q}', ['source'], concepts=concepts, source=str(db), q=urllib.parse.quote(q, safe='')):
-        yield row
+    for row in metadata('sources/{source}/search/{q}', ['source'], source=str(db), q=urllib.parse.quote(q, safe='')):
+        concept = row.concept.lower()
+        if (concept == 'footnote' and footnotes != 'none') or (concept != 'footnote' and footnotes != 'only'):
+            yield row
 
 def _responseHeader(url, result):
     '''Internal function to return the response header, which contains page information
