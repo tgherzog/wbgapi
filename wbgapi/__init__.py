@@ -4,6 +4,7 @@ metadata API with built-in pandas integration
 '''
 
 import urllib.parse
+import re
 from functools import reduce
 import requests
 from tabulate import tabulate
@@ -56,9 +57,14 @@ class Metadata():
         self.metadata = {}
 
     def __repr__(self):
+        return self.repr()
+
+    def repr(self, q=None, padding=None):
+        '''Same as __repr__ but includes formatting options
+        '''
 
         def segment(d):
-            return '\n--------\n'.join(['{}: {}'.format(k, v) for k,v in d.items()]) + '\n'
+            return '\n--------\n'.join(['{}: {}'.format(k, abbreviate(v, q=q, padding=padding)) for k,v in d.items()]) + '\n'
             
         label = self.id
         if self.name:
@@ -104,9 +110,11 @@ class Metadata():
 
 
 class MetadataCollection():
-    def __init__(self, brief=False):
+    def __init__(self, brief=False, padding=80, q=None):
         self.metadata = {}
         self.brief = brief
+        self.padding = padding
+        self.q = q
 
     def append(self, meta):
         '''Append a Metadata object to our store
@@ -133,7 +141,7 @@ class MetadataCollection():
 
         for concept in self.metadata.values():
             for elem in concept:
-                s += elem.__repr__()
+                s += elem.repr(q=self.q, padding=self.padding)
 
         return s
 
@@ -147,7 +155,7 @@ class MetadataCollection():
                 rows = []
                 for metadata in hits:
                     for k,v in metadata.metadata.items():
-                        rows.append([metadata.id, metadata.name, k, v])
+                        rows.append([metadata.id, metadata.name, k, abbreviate(v, q=self.q, padding=self.padding)])
 
                 s += tabulate(rows, tablefmt='html', headers=['ID', 'Name', 'Field', 'Value'])
 
@@ -383,13 +391,18 @@ def metadata(url, variables, concepts='all', **kwargs):
     if m.concept:
         yield m
 
-def search(q, footnotes='none', brief=False, db=None):
+def search(q, footnotes='none', brief=False, padding=80, db=None):
     '''search database metadata and return results as a print-friendly object
 
     Arguments:
         q:          search term
 
         footnotes:  how to treat footnotes: 'include', 'only', or 'none'
+
+        brief:      abbreviated output (don't print matching values)
+
+        padding:    approximate number of surrounding characters to include when displaying text matching
+                    the search term. None returns the entire string
 
         db:         database; pass None to access the global database
 
@@ -404,7 +417,7 @@ def search(q, footnotes='none', brief=False, db=None):
         wbgapi.search('fossil fuels')
     '''
 
-    result = MetadataCollection(brief=brief)
+    result = MetadataCollection(brief=brief, q=q, padding=padding)
 
     for row in search2(q, footnotes=footnotes, db=db):
         result.append(row)
@@ -575,6 +588,25 @@ def htmlTable(*args, **kwargs):
     '''
 
     return '<div class="wbgapi">' + tabulate(*args, tablefmt='html', **kwargs) + '</div>'
+
+def abbreviate(text, q=None, padding=80):
+    '''Returns a shortened version of the text string comprised of the search pattern
+    and a specified number of characters on either side. This is used to optimize
+    search results. If the search pattern 
+    '''
+
+    match = None
+    if q and padding is not None:
+        if padding > 0:
+            pattern = '(?<!\w).{{0,{len}}}{term}.{{0,{len}}}(?!\w)'.format(term=re.escape(q), len=padding)
+            match = re.search(pattern, text, re.IGNORECASE)
+        else:
+            match = re.search(q, text, re.IGNORECASE)
+
+    if match and len(match.group(0)) + 6 < len(text):
+        return '...' + match.group(0) + '...'
+        
+    return text
 
 def _refetch_url(url, var, variables, **kwargs):
     '''Used to chunk potentially very long URLs smaller ones by splitting long arguments
