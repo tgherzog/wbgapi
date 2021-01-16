@@ -15,6 +15,7 @@ to databases that don't adhere to the country-level coding standards.
 
 import wbgapi as w
 from . import economy_metadata as metadata
+from . import utils
 from .economy_coder import coder, coder_report
 from functools import reduce
 import builtins
@@ -60,13 +61,12 @@ def list(id='all', q=None, labels=False, skipAggs=False, db=None):
     '''
     global _class_data
 
-    if q:
-        q = q.lower()
+    q, _ = utils.qget(q)
 
     update_caches()
     for row in w.source.features('economy', w.queryParam(id, 'economy', db=db), db=db):
         _build(row,labels)
-        if (skipAggs == False or row['aggregate'] == False) and (q is None or q in row['value'].lower()):
+        if (skipAggs == False or row['aggregate'] == False) and utils.qmatch(q, row['value']):
             yield row
 
 def get(id,labels=False, db=None):

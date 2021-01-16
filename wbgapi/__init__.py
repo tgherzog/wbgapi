@@ -46,6 +46,16 @@ class APIError(Exception):
 
     return 'APIError: {} ({})'.format(self.msg, self.url)
 
+class APIResponseError(APIError):
+    '''This error indicates that the module didn't understand the response from the API.
+    Either it couldn't parse the JSON (the API sometimes returns XML even when JSON is
+    requested) or it doesn't recognize the json schema
+    '''
+    def __init__(self, url, msg):
+        super(APIResponseError,self).__init__(url, msg)
+
+    pass
+
 class URLError(Exception):
     pass
 
@@ -136,6 +146,9 @@ class MetadataCollection():
     def __repr__(self):
         s = ''
         
+        if len(self.metadata) == 0:
+            return 'No match'
+
         if self.brief:
             return self.brief_table('simple')
 
@@ -146,6 +159,9 @@ class MetadataCollection():
         return s
 
     def _repr_html_(self):
+        if len(self.metadata) == 0:
+            return '<div class="wbgapi"><p class="nomatch">No match</p></div>'
+
         s = '<div class="wbgapi">'
         if self.brief:
             s += self.brief_table('html')
@@ -450,10 +466,14 @@ def search2(q, footnotes='none',  db=None):
     if db is None:
         db = globals()['db']
 
-    for row in metadata('sources/{source}/search/{q}', ['source'], source=str(db), q=urllib.parse.quote(q, safe='')):
-        concept = row.concept.lower()
-        if (concept == 'footnote' and footnotes != 'none') or (concept != 'footnote' and footnotes != 'only'):
-            yield row
+    try:
+        for row in metadata('sources/{source}/search/{q}', ['source'], source=str(db), q=urllib.parse.quote(q, safe='')):
+            concept = row.concept.lower()
+            if (concept == 'footnote' and footnotes != 'none') or (concept != 'footnote' and footnotes != 'only'):
+                yield row
+    except APIResponseError:
+        # if there are no matches, the API returns an error in xml format
+        pass
 
 def _responseHeader(url, result):
     '''Internal function to return the response header, which contains page information
@@ -504,7 +524,7 @@ def _queryAPI(url):
     try:
         result = response.json()
     except:
-        raise APIError(url, 'JSON decoding error')
+        raise APIResponseError(url, 'JSON decoding error')
 
     hdr = _responseHeader(url, result)
     if hdr.get('message'):

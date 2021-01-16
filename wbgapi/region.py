@@ -4,6 +4,7 @@ and other databases that share the same list of economies. It will probably not 
 well with subnational databases or region-specific ones.
 '''
 import wbgapi as w
+from . import utils
 import builtins
 
 def list(id='all', q=None, group=None):
@@ -29,11 +30,10 @@ def list(id='all', q=None, group=None):
     '''
 
     params = {'type': group} if group else {}
-    if q:
-        q = q.lower()
+    q,_ = utils.qget(q)
 
     for row in w.fetch('region/' + w.queryParam(id), params):
-        if q is None or q in row['name'].lower():
+        if utils.qmatch(q, row['name']):
             yield row
 
 def get(id):

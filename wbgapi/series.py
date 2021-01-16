@@ -4,7 +4,7 @@
 
 import wbgapi as w
 from . import series_metadata as metadata
-import builtins
+from . import utils
 
 def list(id='all', q=None, topic=None, db=None):
     '''Return a list of series elements in the current database
@@ -35,11 +35,10 @@ def list(id='all', q=None, topic=None, db=None):
         else:
             id = topics
 
-    if q:
-        q = q.lower()
+    q,fullSearch = utils.qget(q)
 
     for row in w.source.features('series', w.queryParam(id, 'series', db=db), db=db):
-        if q is None or q in row['value'].lower():
+        if utils.qmatch(q, row['value'], fullSearch):
             yield row
 
 

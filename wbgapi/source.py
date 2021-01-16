@@ -9,6 +9,7 @@ supported.
 '''
 
 import wbgapi as w
+from . import utils
 import urllib.parse
 import builtins
 
@@ -37,11 +38,10 @@ def list(id='all', q=None):
     if not id:
         return []
 
-    if q:
-        q = q.lower()
+    q,_ = utils.qget(q)
 
     for row in w.fetch(_sourceurl(id), {'databid': 'y'}):
-        if q is None or q in row['name'].lower():
+        if utils.qmatch(q, row['name']):
             yield row
 
 def get(db=None):

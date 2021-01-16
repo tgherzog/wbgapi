@@ -9,6 +9,7 @@ accept both numeric values and element keys as parameters where this is possible
 e.g., 'YR2015,' '2015' and 2015 are acceptable.
 '''
 import wbgapi as w
+from . import utils
 import builtins
 
 # this is an array of reverse value lookup tables
@@ -33,11 +34,10 @@ def list(id='all', q=None, db=None):
             print(elem['id'], elem['value'])
     '''
 
-    if q:
-        q = q.lower()
+    q,_ = utils.qget(q)
 
     for row in  w.source.features('time', w.queryParam(id, 'time', db=db), db=db):
-        if q is None or q in row['value'].lower():
+        if utils.qmatch(q, row['value']):
             yield row
 
 def get(id, db=None):
