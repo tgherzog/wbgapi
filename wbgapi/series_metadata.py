@@ -81,7 +81,7 @@ def get(id,economies=[],time=[],db=None):
         db:         database; pass None to access the global database
 
     Returns:
-        A metadadata object.  If series/economy or series/time metadata are
+        A Metadata object.  If series/economy or series/time metadata are
         requested they will be stored on the 'economies' and 'time' properties
 
     Examples:

@@ -70,7 +70,7 @@ def get(id,series=[], db=None):
         db:         database; pass None to access the global database
 
     Returns:
-        A metadata object. If series/economy metadata is requested it will be stored on the
+        A Metadata object. If series/economy metadata is requested it will be stored on the
         'series' property of the object.
 
     Example:
