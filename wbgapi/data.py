@@ -233,7 +233,9 @@ def DataFrame(series, economy='all', time='all', index=None, columns=None, mrv=N
             i = [[]] * len(index)
             return pd.DataFrame(index=pd.MultiIndex(levels=i, codes=i, names=tuple(index)))
 
-        return pd.DataFrame()
+        df = pd.DataFrame()
+        df.index.name = index[0]
+        return df
 
     def is_single(x):
 
@@ -349,7 +351,8 @@ def DataFrame(series, economy='all', time='all', index=None, columns=None, mrv=N
     df.sort_index(axis=0,inplace=True)
     df.sort_index(axis=1,inplace=True)
     if labels:
-        return pd.concat([df2,df], axis=1, sort=False)
+        return df2.join(df)
+        # return pd.concat([df2,df], axis=1, sort=False)
         
     return df
         
