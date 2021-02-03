@@ -27,6 +27,7 @@ except ImportError:
     pd = None
 
 _aggs = None
+_empty_meta_value = '' # value used to for mull string economy metadata
 
 # a dict of ISO2 code equivalents, if we ever need this
 _iso2Codes = {}
@@ -59,7 +60,6 @@ def list(id='all', q=None, labels=False, skipAggs=False, db=None):
             print(elem['id'], elem[' value'])
 
     '''
-    global _class_data
 
     q, _ = utils.qget(q)
 
@@ -99,10 +99,10 @@ def _build(row,labels=False):
         cd = _class_data.get('___')
     if cd:
         row.update(cd)
-        row['capitalCity'] = _localized_metadata[w.lang].get('capitalCity:'+row['id'],'')
+        row['capitalCity'] = _localized_metadata[w.lang].get('capitalCity:'+row['id'])
         if labels:
             for key in ['region', 'adminregion', 'lendingType', 'incomeLevel']:
-                row[key] = {'id': row[key], 'value': _localized_metadata[w.lang].get(row[key],'')}
+                row[key] = {'id': row[key], 'value': _localized_metadata[w.lang].get(row[key])}
 
 
 def DataFrame(id='all',labels=False, skipAggs=False, db=None):
@@ -187,14 +187,14 @@ def update_caches():
         # here, we update codes and city translations simultaneously
         for row in w.fetch(url):
             _iso2Codes[row['id']] = row['iso2Code']
-            _localized_metadata[w.lang]['capitalCity:'+row['id']] = row['capitalCity'].strip()
+            _localized_metadata[w.lang]['capitalCity:'+row['id']] = (row['capitalCity'].strip() or _empty_meta_value)
 
             db = {'aggregate': row['region']['id'] == 'NA'}
             for key in ['longitude', 'latitude']:
                 db[key] = float(row[key]) if len(row[key]) else None
 
             for key in ['region', 'adminregion', 'lendingType', 'incomeLevel']:
-                db[key] = '' if db['aggregate'] else row[key]['id']
+                db[key] = _empty_meta_value if db['aggregate'] else (row[key]['id'] or _empty_meta_value)
 
             _class_data[row['id']] = db
             if db['aggregate']:
@@ -208,7 +208,7 @@ def update_caches():
     else:
         # else, just update city codes
         for row in w.fetch(url):
-            _localized_metadata[w.lang]['capitalCity:'+row['id']] = row['capitalCity'].strip()
+            _localized_metadata[w.lang]['capitalCity:'+row['id']] = (row['capitalCity'].strip() or _empty_meta_value)
             
 
 def iso2(code):
