@@ -62,19 +62,11 @@ def members(id):
 
     return w.region.members(id, 'lendingtype')
 
-def Series(id='all',name='LendingGroupName'):
-    '''Return a pandas Series object for the requested lending groups
-
-    Arguments:
-        id:         a lending group identifier or list-like of identifiers
-
-        name:       the Series column name
-
-    Returns:
-        a pandas Series object
+def Series(id='all', q=None, name='LendingGroupName'):
+    '''Return a pandas Series object by calling list
     '''
 
-    return w.pandasSeries(builtins.list(list(id)), name=name)
+    return w.Series(list(id, q=q), name=name)
 
 def info(id='all', q=None):
     '''Print a user report of lending groups

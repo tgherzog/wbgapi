@@ -52,7 +52,7 @@ def get(id):
     
     return w.get('region/' + w.queryParam(id))
 
-def members(id,param='region'):
+def members(id, param='region'):
     '''Return a set of economy identifiers that are members of the specified region
 
     Arguments:
@@ -73,21 +73,11 @@ def members(id,param='region'):
 
     return e
 
-def Series(id='all', group=None, name='RegionName'):
-    '''Return a pandas Series object for the requested regions
-
-    Arguments:
-        id:         a region identifier or list-like of identifiers
-
-        group:      subgroup to return. See list() for possible values
-
-        name:       the Series column name
-
-    Returns:
-        a pandas Series object
+def Series(id='all', q=None, group=None, name='RegionName'):
+    '''Return a pandas Series by calling list
     '''
 
-    return w.pandasSeries(builtins.list(list(id, group=group)), key='code',value='name', name=name)
+    return w.Series(list(id, q=q, group=group), key='code', value='name', name=name)
 
 def info(id='all', q=None, group=None):
     '''Print a user report of regions.

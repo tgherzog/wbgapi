@@ -575,12 +575,12 @@ def queryParam(arg, concept=None, db=None):
     # this will throw an exception if arg is not iterable, which is what we want it to do
     return ';'.join(map(lambda x:str(x), arg))
 
-def pandasSeries(data, key='id',value='value',name=None):
-    '''Convert an object array to a pandas Series object. This core function is
-    called by several dimension-specific implementation functions
+def Series(data, key='id', value='value', name=None):
+    '''Convert a list-like to a pandas Series object. This core function is
+    called by several dimension-specific implementation functions.
 
     Arguments:
-        data:       an object array. Each object becomes a Series row
+        data:       an object array, generator, or function that returns a list-like
 
         key:        field for the Series index
 
@@ -590,6 +590,13 @@ def pandasSeries(data, key='id',value='value',name=None):
 
     Returns:
         a pandas Series object
+    
+    Example:
+        Generally you are better off calling the Series function for a specific feature
+        e.g., wbgapi.time.Series(). Direct calls should only be necessary for databases
+        with custom dimensions, for instance:
+
+        wbgapi.Series(wbgapi.source.features('version', db=57))
     '''
 
     
@@ -598,6 +605,9 @@ def pandasSeries(data, key='id',value='value',name=None):
 
     if name is None:
         name = value
+
+    if callable(data):
+        data = data()
 
     return pd.Series({row[key]: row[value] for row in data}, name=name)
 

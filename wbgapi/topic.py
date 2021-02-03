@@ -64,19 +64,11 @@ def members(id):
 
     return e
 
-def Series(id='all', name='TopicName'):
-    '''Return a pandas Series object for the requested topics
-
-    Arguments:
-        id:         a region identifier or list-like of identifiers
-
-        name:       the Series column name
-
-    Returns:
-        a pandas Series object
+def Series(id='all', q=None, name='TopicName'):
+    '''Return a pandas Series by calling list
     '''
 
-    return w.pandasSeries(builtins.list(list(id)), key='id', value='value', name=name)
+    return w.Series(list(id, q=q), name=name)
 
 def info(id='all', q=None):
     '''Print a user report of topics

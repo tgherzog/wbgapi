@@ -59,6 +59,12 @@ def get(id, db=None):
 
     return w.source.feature('series', id, db=db)
 
+def Series(id='all', q=None, topic=None, db=None, name='SeriesName'):
+    '''Return a pandas Series by calling list
+    '''
+
+    return w.Series(list(id, q=q, topic=topic, db=db), name=name)
+
 def info(id='all', q=None, topic=None, db=None):
     '''Print a user report of series. This can be time consuming
     for large databases like the WDI if 'all' series are requested.

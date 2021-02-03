@@ -4,8 +4,8 @@
 World Bank databases are multi-dimensional databases that at a minimum
 have series, economy, and time dimensions. Concept names are not consistent
 across databases, but the wbgapi module tries to insulate the user from
-these inconsistencies. Additional (4th or 5th) dimensions are possible but are not currently
-supported.
+these inconsistencies. Use the concepts() function to access the low-level
+concept names.
 '''
 
 import wbgapi as w
@@ -58,6 +58,12 @@ def get(db=None):
     '''
 
     return w.get(_sourceurl(db), {'databid': 'y'})
+
+def Series(id='all', q=None, name='SourceName'):
+    '''Return a Pandas series by calling list
+    '''
+
+    return w.Series(list(id, q=q), value='name', name=name)
 
 def concepts(db=None):
     '''Retrieve the concepts for the specified database. This function also implements

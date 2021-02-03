@@ -57,7 +57,12 @@ def get(id, db=None):
 
     return w.source.feature('time', w.queryParam(id, 'time', db=db), db=db)
 
-    
+def Series(id='all', q=None, db=None, name='TimePeriodName'):
+    '''Return a pandas series by calling list
+    '''
+
+    return w.Series(list(id, q=q, db=db), name=name)
+
 def periods(db=None):
     '''Returns a dict of time features keyed by value for the current database. This is
     primarily used internally to recognize both values and keys as equivalent

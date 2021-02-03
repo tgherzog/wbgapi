@@ -145,6 +145,13 @@ def DataFrame(id='all',labels=False, skipAggs=False, db=None):
 
     return df
 
+def Series(id='all', q=None, skipAggs=False, db=None, name='EconomyName'):
+    '''Return a pandas series by calling list
+    '''
+
+    return w.Series(list(id, q=q, skipAggs=skipAggs, db=db), name=name)
+
+
 def aggregates():
     '''Returns a set object with both the 2-character and 3-character codes
     of aggregate economies. These are obtained from the API and then cached.
