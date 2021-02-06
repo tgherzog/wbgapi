@@ -3,28 +3,16 @@
 
 WBGAPI provides modern, pythonic access to the World Bank's data API.
 It is designed both for data novices and data scientist types. 
-WBGAPI tries to shield users from some of the confusing ideosyncrasies
-of the World Bank's API while remaining consistent and intuitive for
-those who are familiar with its basic data structures.
 
-WBGAPI differs from other modules in a few respects. The most significant
-is that it queries databases individually instead of collectively. To appreciate
-the difference, consider this API request:
-
-https://api.worldbank.org/v2/indicator
-
-As of this writing, this request returns 17,473 resulting indicators. But what
-this obscures is that these indicators are stored in 61 separate databases,
-updated on different schedules, and covering different time spans and country
-groups. Many indicators appear in more than one database. While it's possible
-to use the API to get more precise results, it's not always easy to understand
-what you're requesting or where it's actually coming from.
-
-WBGAPI fixes this issue by only querying a single database at a time using a [relatively
-new set of endpoints][beta-endpoints]. This gives users an accurate picture
-of both the data, dimensions and features of that database. The default database
-is the World Development Indicators (WDI) but you can target different databases
-either globally or with each request.
+WBGAPI differs from other packages for World Bank data in a few respects and in general tries
+to take full advantage of the World Bank's powerful API while mitigating
+the impact of some its ideosyncracies. The most significant difference
+from other packages is that WBGAPI queries databases individually instead
+of collectively. By default, WBGAPI queries the World Development Indicators
+database (db=2) but the default can be changed for each request or globally.
+This prevents confusion when indicators such as population (SP.POP.TOTL)
+appear in several different databases or when different databases have
+different dimensions, economies or time periods.
 
 Other key features:
 
@@ -36,7 +24,7 @@ Other key features:
 
 * Very "pythonic": use of generators, ranges and sets make data access easy and elegant
 
-* Extensive [pandas][pandas] support (optional)
+* Extensive (but optional) [pandas][pandas] support
 
 ## Installation ##
 
@@ -54,251 +42,186 @@ WBGAPI includes extenstive docstrings with lots of examples:
     help(wb.series)  
     [etc]
 
-Every element type is its own object: source, series, region, time,
-etc. Note that "countries" and aggregates are accessed through the "economy"
-object and the time dimension is always accessed through the time object.
-All World Bank databases have a series, time, and economy dimension,
-although the API is not consistent in its concept scheme across databases.
-For example, in some databases the economy dimension is called 'economy' or 'province'
-instead of 'country' and the time dimension is sometimes called 'year.'
-The WBGAPI module saves you most of that headache.
+## Design Overview ##
 
-Objects tend to use a common set of functions which you'll use heavily:
+WBGAPI includes sub-packages for major features in the World Bank API:
 
-* `list()` returns an interative list of basic data elements. Actually, it returns a python generator.
-  You can pass parameters to limit the list, but by default it returns all elements
-  in the database.
+Feature   | Description
+--------- | -----------
+series    | Indicators (e.g., 'SP.POP.TOTL')
+economy   | Countries and economies (could be subnational for some databases)
+time      | Time (usually annual, sometimes quarterly or monthly)
+source    | Databases (e.g., WDI, Doing Business, International Debt)
+region    | World Bank regions (this is global to all databases)
+income    | World Bank income groups (also global)
+lending   | World Bank lending types (also global)
+topic     | World Bank topics (this is also a global list and discrete from the Topic metadata field for series)
 
-* `get()` returns a single object.
+Each of the above implements a minimum of four functions for accessing and displaying elements of that feature:
 
-* `info()` prints a summary report of objects: all elements by default. These are great
-  if you just want to quickly see what's in a database.
+Function   | Description
+---------- | -----------
+`list`     | Returns an iterable list (python generator) of elements
+`get`      | Returns a single element, e.g. `get('SP.POP.TOTL')`
+`info`     | Like `list` but returns a human-readable table
+`Series`   | Like `list` but returns a pandas Series
 
-* `fetch()` functions return data and metadata. They usually involve more arguments
-  and return more complicated objects, but are otherwise similar to `list()`
+## Looking Around ##
 
-Alrighty then, let's fire it up:
+In interactive mode or a jupyter notebook, the `info` functions are great for exploring what's in the API
+or a particular database. A good place to start is by listing the available databases:
 
     import wbgapi as wb
-
-    # show the series list
-    wb.series.info()
-    id                         value
-    AG.AGR.TRAC.NO             Agricultural machinery, tractors
-    AG.CON.FERT.PT.ZS          Fertilizer consumption (% of fertilizer production)
-    AG.CON.FERT.ZS             Fertilizer consumption (kilograms per hectare of arable land)
-    AG.LND.AGRI.K2             Agricultural land (sq. km)
-    AG.LND.AGRI.ZS             Agricultural land (% of land area)
-    AG.LND.ARBL.HA             Arable land (hectares)
-    AG.LND.ARBL.HA.PC          Arable land (hectares per person)
-    AG.LND.ARBL.ZS             Arable land (% of land area)
+    
+    wb.source.info()
+    id    name                                                                  lastupdated
+    ----  --------------------------------------------------------------------  -------------
+    1     Doing Business                                                        2019-10-23
+    2     World Development Indicators                                          2020-12-16
+    3     Worldwide Governance Indicators                                       2020-09-28
+    5     Subnational Malnutrition Database                                     2016-03-21
+    6     International Debt Statistics                                         2021-01-21
     ...
-                               1429 elements
+          63 elements
 
-    wb.time.info()
-    id      value
-    YR1960  1960
-    YR1961  1961
-    YR1962  1962
-    YR1963  1963
-    YR1964  1964
-    ...
-            60 elements
+From there, you can inspect the contents of individual databases:
 
-That first command will take a while and run a very long report due to the size of the WDI.
+    wb.series.info()        # WDI by default
+    wb.economy.info(db=6)   # economies in the Debt Statistics database
+    wb.db = 1               # Change default database to...
+    wb.series.info()        # ...Doing Business
 
-Use `get()` and `list()` to access the underlying objects:
+`info`, `list` and `Series` also let you pass an identifier or list of identifiers to filter the printout:
 
-    wb.economy.get('COL')
-    {'id': 'COL', 'value': 'Colombia', 'aggregate': False, 'longitude': -74.082, 'latitude': 4.60987, 'region': 'LCN', 'adminregion': 'LAC', 'lendingType': 'IBD', 'incomeLevel': 'UMC', 'capitalCity': 'Bogota'}
+    wb.series.info('NY.GDP.PCAP.CD')           # GDP
+    wb.economy.info(['CAN', 'USA', 'MEX'])     # Countries in North America
 
-    stuff = {i['id']: i['value'] for i in wb.series.list(['SP.POP.TOTL', 'SI.POV.NAHC'])}
-    stuff
-    {'SP.POP.TOTL': 'Population, total', 'SI.POV.NAHC': 'Poverty headcount ratio at national poverty lines (% of population)'}
+You can also query by keyword:
 
-Any single identifier or iterable object can generally be passed as an argument to select series, economies, regions, and so forth.
-Here's an easy way to get a list of high-income countries:
+    wb.series.info(q='women')
+    wb.economy.info(q='congo')
 
-    for row in wb.economy.list(wb.region.members('HIC')):
-        print(row['value'])
+**Note:** keyword queries ignore thee parenthetical part of the indicator name. For example,
+`q='GDP'` will not match "Gross domestic savings (% of GDP)". To search the parenthetical part too, add
+an exclamation point like this: `q='!GDP'`
 
-### Data Requests ###
+Additionally, the `region`, `income`, `lending`, and `topic` sub-packages have a `members` function
+that returns the membership of the specfied group, so you can do this:
 
-Again, use `fetch()` for multiple rows of data, and `get()` for single rows. Python ranges are an easy way to
-indicate which time periods you want.
+    wb.economy.info(wb.income.members('HIC'))      # high-income economies
+    wb.series.info(wb.topic.members(8))            # indicators in the health topic (wb.topic.info() for full list)
+    wb.series.info(topic=8)                        # same as above but easier to type
 
-    # this request fetches data for 3 countries from 2010-2015. Be careful with requests
-    # that omit constraints on economies and/or time as these can take a long time to run
-    # and return large numbers of rows
-    for row in wb.data.fetch('SP.POP.TOTL', economy=['BRA', 'ARG', 'URY'], time=range(2010,2015)):
+If that doesn't do it, the `search` function provides deeper search on all metadata in the current database:
+
+    wb.search('fossil fuels')
+
+When you need programmatic access, just call `list` or `Series` instead of `info` in the above examples.
+
+## Accessing Data ##
+
+The `data` sub-package requests data for combinations of series, economies, and time periods in the current
+database. Use the `fetch` function to return rows as dictionary objects:
+
+    for row in wb.data.fetch('SP.POP.TOTL', 'USA'): # all years
         print(row)
 
-    {'value': 3400434, 'series': 'SP.POP.TOTL', 'economy': 'URY', 'aggregate': False, 'time': 'YR2014'}
-    {'value': 3389439, 'series': 'SP.POP.TOTL', 'economy': 'URY', 'aggregate': False, 'time': 'YR2013'}
-    {'value': 3378974, 'series': 'SP.POP.TOTL', 'economy': 'URY', 'aggregate': False, 'time': 'YR2012'}
-    ...
-    {'value': 13082.664325572, 'series': 'NY.GDP.PCAP.CD', 'economy': 'ARG', 'aggregate': False, 'time': 'YR2012'}
-    {'value': 12848.8641969705, 'series': 'NY.GDP.PCAP.CD', 'economy': 'ARG', 'aggregate': False, 'time': 'YR2011'}
-    {'value': 10385.9644319555, 'series': 'NY.GDP.PCAP.CD', 'economy': 'ARG', 'aggregate': False, 'time': 'YR2010'}
+Or `DataFrame` to return a pandas data frame:
 
-Or if you want the most recent value for every country (omitting aggregates), including both element codes and labels:
+    wb.data.DataFrame(['NY.GDP.PCAP.CD', 'SP.POP.TOTL'], 'CAN', mrv=5) # most recent 5 years 
 
-    for row in wb.data.fetch('SP.POP.TOTL', mrnev=1, skipAggs=True, labels=True):
-        print(row['economy'], row['value'])
+Each of those parameters (series, economy, time) accepts a single identifier, a list of identifiers, or the default keyword 'all':
 
-    {'id': 'AFG', 'value': 'Afghanistan', 'aggregate': False} 37172386
-    {'id': 'ALB', 'value': 'Albania', 'aggregate': False} 2866376
-    {'id': 'DZA', 'value': 'Algeria', 'aggregate': False} 42228429
-    {'id': 'ASM', 'value': 'American Samoa', 'aggregate': False} 55465
-    ...
+    # population for African countries, every other year
+    wb.data.DataFrame('SP.POP.TOTL', wb.region.members('AFR'), range(2010, 2020, 2))
 
-### Pandas ###
+Both `fetch` and `DataFrame` provide a lot of paramters for customizing your request, so use the help function to check
+the documentation.
 
-Data and economy queries can be returned as pandas DataFrames. For example:
+Note that `DataFrame` will use multi-indexes where necessary (use the "index" and "columns" parameters to change the
+default behavior)::
 
-    # data frame of population data for even-numbered years
-    wb.data.DataFrame('SP.POP.TOTL', time=range(2010,2020,2),labels=True)
-                Label      YR2010      YR2012      YR2014      YR2016      YR2018
-    ABW         Aruba    101669.0    102560.0    103774.0    104872.0    105845.0
-    AFG   Afghanistan  29185507.0  31161376.0  33370794.0  35383128.0  37172386.0
-    AGO        Angola  23356246.0  25107931.0  26941779.0  28842484.0  30809762.0
-    ALB       Albania   2913021.0   2900401.0   2889104.0   2876101.0   2866376.0
-    AND       Andorra     84449.0     82427.0     79213.0     77297.0     77006.0
-    ..            ...         ...         ...         ...         ...         ...
-    XKX        Kosovo   1775680.0   1805200.0   1821800.0   1816200.0   1845300.0
-    YEM   Yemen, Rep.  23154855.0  24473178.0  25823485.0  27168210.0  28498687.0
-    ZAF  South Africa  51216964.0  52834005.0  54545991.0  56203654.0  57779622.0
-    ZMB        Zambia  13605984.0  14465121.0  15399753.0  16363507.0  17351822.0
-    ZWE      Zimbabwe  12697723.0  13115131.0  13586681.0  14030390.0  14439018.0
+    wb.data.DataFrame(['SP.POP.TOTL', 'EN.ATM.CO2E.KT'], time=range(2000, 2020), skipBlanks=True, columns='series')
 
-`economy`, `region`, `income`, and `lending` can also return Pandas objects. Here is how you might add the income group to the query above:
+                    EN.ATM.CO2E.KT  SP.POP.TOTL
+    economy time                               
+    ABW     YR2000        2379.883      90853.0
+            YR2001        2409.219      92898.0
+            YR2002        2438.555      94992.0
+            YR2003        2563.233      97017.0
+            YR2004        2618.238      98737.0
+    ...                        ...          ...
+    ZWE     YR2015       12317.453   13814629.0
+            YR2016       10982.665   14030390.0
+            YR2017             NaN   14236745.0
+            YR2018             NaN   14439018.0
+            YR2019             NaN   14645468.0
+ 
+Use the `reset_index` function (on the data frame) to replace the index with 0-based integers:
 
-    c = wb.economy.DataFrame()
-    df = wb.data.DataFrame('SP.POP.TOTL', time=range(2010,2020,2),labels=True,skipAggs=True).join(c['incomeLevel'])
-    df
-                Label      YR2010      YR2012      YR2014      YR2016      YR2018 incomeLevel
-    ABW         Aruba    101669.0    102560.0    103774.0    104872.0    105845.0         HIC
-    AFG   Afghanistan  29185507.0  31161376.0  33370794.0  35383128.0  37172386.0         LIC
-    AGO        Angola  23356246.0  25107931.0  26941779.0  28842484.0  30809762.0         LMC
-    ALB       Albania   2913021.0   2900401.0   2889104.0   2876101.0   2866376.0         UMC
-    AND       Andorra     84449.0     82427.0     79213.0     77297.0     77006.0         HIC
-    ..            ...         ...         ...         ...         ...         ...         ...
+    wb.data.DataFrame('SP.POP.TOTL', time=2015, labels=True).reset_index()
 
-And then aggregate (albeit unweighted):
+        economy                         Country   SP.POP.TOTL
+    0       ZWE                        Zimbabwe  1.381463e+07
+    1       ZMB                          Zambia  1.587936e+07
+    2       YEM                     Yemen, Rep.  2.649789e+07
+    3       PSE              West Bank and Gaza  4.270092e+06
+    4       VIR           Virgin Islands (U.S.)  1.077100e+05
+    ..      ...                             ...           ...
 
-    df.groupby('incomeLevel').mean()
-                       YR2010        YR2012        YR2014        YR2016        YR2018
-    incomeLevel                                                                      
-    HIC          1.436314e+07  1.451850e+07  1.469533e+07  1.487142e+07  1.502200e+07
-    LIC          1.862174e+07  2.012211e+07  2.113464e+07  2.222469e+07  2.339882e+07
-    LMC          5.720078e+07  5.898364e+07  6.076860e+07  6.254959e+07  6.431713e+07
-    UMC          4.165684e+07  4.229376e+07  4.296426e+07  4.363008e+07  4.426060e+07
+Most World Bank databases consist of 3 dimensions: series, economy and time. But some, like WDI Archives,
+contain 4 dimensions, which you can access like this:
 
-Of course, these DataFrames can be used for any sort of analysis and operations that pandas supports,
-and can be used with lots of various visualization libraries. Time series can be easily plotted by transposing a DataFrame:
+    wb.source.concepts(db=57)
 
-    wb.data.DataFrame('NY.GDP.PCAP.CD', ['BRA', 'ARG'], time=range(2000,2020),numericTimeKeys=True).transpose().plot()
+    {'economy': {'key': 'country', 'value': 'Country'},
+     'series': {'key': 'series', 'value': 'Series'},
+     'time': {'key': 'time', 'value': 'Time'},
+     'version': {'key': 'version', 'value': 'Version'}}
 
-Use pandas' `reset_index` option to fetch unindexed columns of indicators:
+And query like this:
 
-    wb.data.DataFrame(['SP.POP.TOTL', 'NY.GDP.PCAP.CD', 'EN.ATM.CO2E.KT'],time=range(2000,2010), numericTimeKeys=True, columns='series').reset_index()
-          time economy  EN.ATM.CO2E.KT  NY.GDP.PCAP.CD  SP.POP.TOTL
-    0     2000     ABW        2379.883    20620.700626      90853.0
-    1     2000     AFG         773.737             NaN   20779953.0
-    2     2000     AGO        9541.534      556.836318   16395473.0
-    3     2000     ALB        3021.608     1126.683318    3089027.0
-    4     2000     AND         524.381    21936.530101      65390.0
-    ...    ...     ...             ...             ...          ...
-    2635  2009     XKX             NaN     3209.711460    1761474.0
-    2636  2009     YEM       24561.566     1116.084594   22516460.0
-    2637  2009     ZAF      503112.400     5862.797340   50477011.0
-    2638  2009     ZMB        2508.228     1159.907762   13215139.0
-    2639  2009     ZWE        5603.176      771.598786   12526968.0
+    # Have population estimates for Brazil been revised over time?
+    # Version identifiers are in the form YYYYMM. This example queries data for the April
+    # versions from 2010-2019
+    wb.data.DataFrame('SP.POP.TOTL', 'BRA', range(2000,2005), version=range(201004,202004,100), db=57)
+                  YR2000       YR2001       YR2002       YR2003       YR2004
+    version                                                                 
+    201004   174174447.0  176659138.0  179123364.0  181537359.0  183863524.0
+    201104   174174447.0  176659138.0  179123364.0  181537359.0  183863524.0
+    201204   174425387.0  176877135.0  179289227.0  181633074.0  183873377.0
+    201304   174425387.0  176877135.0  179289227.0  181633074.0  183873377.0
+    201404   174504898.0  176968205.0  179393768.0  181752951.0  184010283.0
+    201504   174504898.0  176968205.0  179393768.0  181752951.0  184010283.0
+    201604   175786441.0  178419396.0  181045592.0  183627339.0  186116363.0
+    201704   175786441.0  178419396.0  181045592.0  183627339.0  186116363.0
+    201804   175287587.0  177750670.0  180151021.0  182482149.0  184738458.0
+    201904   175287587.0  177750670.0  180151021.0  182482149.0  184738458.0
+    
 
+## Access the Economies Data Frame ##
 
-### Switching databases ###
+As explained above, any feature in WBGAPI can be returned as a pandas Series. In addition economies
+can also be returned as a DataTable with region, income, and lending codes:
 
-Use the `source` object to learn about other databases and the `db` variable to change the global database target:
+    wb.economy.DataFrame()
 
-    wb.source.info()
-    id  name
-    1   Doing Business
-    2   World Development Indicators
-    3   Worldwide Governance Indicators
-    5   Subnational Malnutrition Database
-    ...
+Or to limit exclude the aggregate regions:
 
-    wb.db = 1   # change to Doing Business
-    wb.series.info()
-    id                                                 value
-    ENF.CONT.COEN.ATDR                                 Enforcing contracts: Alternative dispute resolution (0-3) (DB16-20 methodology)
-    ENF.CONT.COEN.ATFE.PR                              Enforcing contracts: Attorney fees (% of claim)
-    ENF.CONT.COEN.COST.ZS                              Enforcing contracts: Cost (% of claim)
-    ...
-
-Most functions also accept a `db` parameter to specify the database as an argument. This option will override the global option.
+    wb.economy.DataFrame(skipAggs=False)
 
 
-### Custom Dimensions ###
-
-Most databases consist of 3 dimensional concepts: `series`, `country` and `time`. But this is not always the case: several databases use `economy`, `state`
-or something else in lieu of `country` and at least one uses `year` in lieu of `time`. To make programming more intuitive, wbgapi normalizes common
-dimensions as `economy` and `time` so that you don't have to guess (this includes subnational databases, since at this point all databases capture
-all administrative levels in the same dimension).
-
-You can access a database's actual concept structure like this:
-
-    for k,v in wb.source.concepts().items():
-        print(k, v)
-
-Some databases have additional dimensions; for instance, WDI Archives (57) has a version dimension. Simply pass these as additional parameters,
-or omit them to return all features in the dimension. Python ranges work where where dimensions are numeric. For example, to retrieve population
-data for all WDI versions in 2019, do this:
-
-    for row in wb.data.fetch('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912), wb.db=57):
-      ...
-
-or:
-
-    for row in wb.data.fetch('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912), db=57):
-      ...
-
-wbgapi will create multi-index DataFrames where necessary, although you may need to fiddle with the index and column parameters to get what you want.
-Here is how to run the same query arranged to more easily compare different versions of the same series:
-
-    wb.data.DataFrame('SP.POP.TOTL', ['BRA', 'COL', 'ARG'], time=range(2010,2015), version=range(201901,201912), index=['economy', 'version'], db=57)
-
-                     YR2010       YR2011       YR2012       YR2013       YR2014
-    ARG 201901   41223889.0   41656879.0   42096739.0   42539925.0   42981515.0
-        201903   41223889.0   41656879.0   42096739.0   42539925.0   42981515.0
-        201904   41223889.0   41656879.0   42096739.0   42539925.0   42981515.0
-        201906   40788453.0   41261490.0   41733271.0   42202935.0   42669500.0
-    ...
-    BRA 201901  196796269.0  198686688.0  200560983.0  202408632.0  204213133.0
-        201903  196796269.0  198686688.0  200560983.0  202408632.0  204213133.0
-        201904  196796269.0  198686688.0  200560983.0  202408632.0  204213133.0
-        201906  195713635.0  197514534.0  199287296.0  201035903.0  202763735.0
-    ...
-    COL 201901   45918097.0   46406646.0   46881475.0   47342981.0   47791911.0
-        201903   45918097.0   46406646.0   46881475.0   47342981.0   47791911.0
-        201904   45918097.0   46406646.0   46881475.0   47342981.0   47791911.0
-        201906   45222700.0   45663099.0   46076848.0   46497267.0   46969209.0
-    ...
-
-### Metadata ###
+## Accessing Metadata ##
 
 wbgapi returns metadata for series, economies and combinations:
 
     wb.series.metadata.get('SP.POP.TOTL', economies=['KEN', 'TZA'])
 
-    for i in wb.economy.metadata.get('all'):
-      print(i)
-
 or single footnotes:
 
-    print(wb.data.footnote('SP.POP.TOTL', 'FRA', 2015))
+    wb.data.footnote('SP.POP.TOTL', 'ARG', 2010)
 
-### Resolving Country Names ###
+## Resolving Country Names ##
 
 wbgapi includes utility function that resolves common spellings of country names to the ISO3 codes used by the API. The
 return from this function is a "dict" subclass that provides a nice report, but can still be processed programmatically:
@@ -311,10 +234,6 @@ return from this function is a "dict" subclass that provides a nice report, but 
     South Korea      Korea, Rep.     KOR
     England          United Kingdom  GBR
     Chicago
-
----
-
-Hopefully that gives you a taste and enough to get started. Use `help()` and read the docstrings for lots more examples, information, and ideas.
 
 ## Customizing the Display ##
 
@@ -334,18 +253,10 @@ to DataFrame objects, which are formatted by pandas.
       'https': 'http://10.10.1.10:1080',
     }
 
-## Limitations ##
+## Caching ##
 
-* WBGAPI requires Python 3.x (it's 2020, and the [sun has set on Python 2.x][sunset]). Time
-  to move on if you haven't already.
-
-* WBGAPI is fully multi-lingual. However, as of this writing, the API endpoints it depends
-  on are returning English-only, which means that in practice the module is English-only as well.
-  Short of some serious hacks which have their own negative consequences, it's not really possible
-  to fix this until the API itself sees some improvements.
-
-* WBGAPI has no built-in caching. However, it makes all its requests through [requests][requests], which
-  can be cached via [requests cache][req-cache]
+WBGAPI has no built-in caching. However, it makes all its requests through [requests][requests], which
+can be cached via [requests cache][req-cache]
 
 [beta-endpoints]: https://datahelpdesk.worldbank.org/knowledgebase/articles/1886686-advanced-data-api-queries
 [pandas]: https://pandas.pydata.org
