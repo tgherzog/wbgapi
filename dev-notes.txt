@@ -25,12 +25,16 @@ databid:                     - with /v2/en/sources, this will include the intern
 
 ## Steps to update in pypi.org ##
 
-1. Update setup.py (i.e. version number) and commit changes
+1. Update setup.py if necessary
 
-2. Run from project directory (builds dist/*):
+2. Update wbgapi/__version__.py
+
+3. Commit changes
+
+4. Run from project directory (builds dist/*):
 
    python3 setup.py sdist bdist_wheel
 
-3. Run from the project directory:
+5. Run from the project directory:
 
    python3 -m twine upload dist/*

@@ -17,6 +17,9 @@ from . import income
 from . import lending
 from . import topic
 from . import data
+
+from .__version__ import __version__
+
 try:
     import pandas as pd
 except ImportError:

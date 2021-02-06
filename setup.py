@@ -1,12 +1,15 @@
 
 import setuptools
+import sys
+
+from wbgapi.__version__ import __version__ as pkgVersion
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="wbgapi",
-    version="1.0.3",
+    version=pkgVersion,
     author="Tim Herzog",
     # author_email="author@example.com",
     description="wbgapi provides a comprehensive interface to the World Bank's data and metadata APIs",
