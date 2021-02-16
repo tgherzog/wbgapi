@@ -12,6 +12,7 @@ import wbgapi as w
 from . import utils
 import urllib.parse
 import builtins
+import re
 
 
 # concepts cached per database
@@ -104,6 +105,8 @@ def concepts(db=None):
             id = 'series'
         else:
             id = key
+
+        id = re.sub(r'[\-\.,:!]', '_', id)  # neutralize special characters
         c[id] = {'key': key, 'value': row['value']}
 
     _concepts[db] = c
