@@ -199,6 +199,28 @@ And query like this:
     201904   175287587.0  177750670.0  180151021.0  182482149.0  184738458.0
     
 
+## Non-Standard and Custom Dimensions ##
+
+WBGAPI tries to provide some level of normalization for dimensions in API databases. As suggested
+above, the 'economy' dimension is referenced as 'economy' even though the target database
+may defined it as 'state,' 'province' or something else. Similarly, 'year' becomes 'time.'
+Reserved characters are mapped to underscores so you can pass them as function arguments.
+Again, the `concepts` function shows what is going on behind the scenes:
+
+    wb.source.concepts(db=6)
+
+    {'counterpart_area': {'key': 'counterpart-area', 'value': 'Counterpart-Area'},
+     'economy': {'key': 'country', 'value': 'Country'},
+     'series': {'key': 'series', 'value': 'Series'},
+     'time': {'key': 'time', 'value': 'Time'}}
+
+The standard dimensions all support the Series function to provide elements as a
+pandas Series (see above), but they all share a common implemention function which you can
+call yourself. Here's how to get a Series for a custom dimension:
+
+    wb.Series(wb.source.features('counterpart_area', db=6))
+
+
 ## Access the Economies Data Frame ##
 
 As explained above, any feature in WBGAPI can be returned as a pandas Series. In addition economies
