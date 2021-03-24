@@ -211,7 +211,7 @@ def DataFrame(series, economy='all', time='all', index=None, columns=None, mrv=N
 
     Examples:
         # 5 years of population data (with economy names)
-        wbgapi.data.DataFrame('SP.POP.TOTL, time=range(2010,2020),labels=True)
+        wbgapi.data.DataFrame('SP.POP.TOTL', time=range(2010,2020),labels=True)
 
         # Most recent poverty and income data for LAC
         wbgapi.data.DataFrame(['SI.POV.NAHC', 'NY.GDP.PCAP.CD'], economy=wb.region.members('LAC'),mrnev=1,timeColumns=True)
