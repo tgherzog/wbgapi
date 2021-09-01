@@ -198,7 +198,7 @@ def info(id='all', q=None):
         None
     '''
     
-    return w.Featureset(list(id, q=q), ['id', 'name', 'lastupdated'])
+    return w.Featureset(list(id, q=q), ['id', 'name', 'code', 'concepts', 'lastupdated'])
 
 def _sourceurl(db):
     '''Internal function: returns the URL for fetching database objects

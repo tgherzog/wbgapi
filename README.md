@@ -101,7 +101,7 @@ You can also query by keyword:
     wb.series.info(q='women')
     wb.economy.info(q='congo')
 
-**Note:** keyword queries ignore thee parenthetical part of the indicator name. For example,
+**Note:** keyword queries ignore the parenthetical part of the indicator name. For example,
 `q='GDP'` will not match "Gross domestic savings (% of GDP)". To search the parenthetical part too, add
 an exclamation point like this: `q='!GDP'`
 

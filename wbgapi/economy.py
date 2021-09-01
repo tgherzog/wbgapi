@@ -135,6 +135,7 @@ def DataFrame(id='all',labels=False, skipAggs=False, db=None):
             columns.remove('id')
             columns.remove('value')
             df = pd.DataFrame(columns=['name']+columns)
+            df.index.name = 'id'
 
         key = row['id']
         name = row['value']
@@ -232,6 +233,13 @@ def iso2(code):
     Notes:
         iso2 codes are not used in the module, but this function is provided as
         a convenience if you need it.
+
+   Examples:
+        iso2 = wbgapi.economy.iso2('USA')                             # returns a single code
+
+        iso2 = list(map(wbgapi.economy.iso2, ['USA', 'CAN', 'MEX']))  # returns an array of corresponding iso2 codes
+
+        iso2 = df['iso3'].apply(wbgapi.economy.iso2)                  # returns a Pandas series
         
     '''
 
