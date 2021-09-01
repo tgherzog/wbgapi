@@ -16,6 +16,8 @@ BIH:
 - Bosnia Hercegovenia
 BRN:
 - Brunei
+CHN:
+  order: 20 # defer to 'Hong Kong'
 CIV:
 - Ivory Coast
 - C..?te d.?Ivoire
@@ -47,6 +49,7 @@ GBR:
 GMB:
 - Gambia
 HKG:
+- ~China.*Hong Kong
 - Hong Kong
 IRL:
   order: 20 # defer to 'Great Britain and Northern Ireland'

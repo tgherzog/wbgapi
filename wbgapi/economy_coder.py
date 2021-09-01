@@ -100,15 +100,18 @@ def coder(name, summary=False, debug=None):
                 print(obj)
                 raise
 
-            _lookup_data.append((row['id'].lower(), row['id'], False, order))
-            _lookup_data.append(('\\b{}\\b'.format(prepare(row['name'], clean=True, magicRegex=True)), row['id'], True, order))
+            _lookup_data.append((row['id'].lower(), row['id'], 0, order))
+            _lookup_data.append(('\\b{}\\b'.format(prepare(row['name'], clean=True, magicRegex=True)), row['id'], 1, order))
             for row2 in obj.get('patterns',[]):
                 if row2[0:1] == ':':
                     # treat as an exact case-insensitive string match
-                    _lookup_data.append((row2[1:].lower(), row['id'], False, order))
+                    _lookup_data.append((row2[1:].lower(), row['id'], 0, order))
+                elif row2[0:1] == '~':
+                    # treat as regex string, but EXCLUDE this pattern
+                    _lookup_data.append(('\\b{}\\b'.format(prepare(row2[1:], clean=False, magicRegex=True)), row['id'], 2, order))
                 else:
                     # treat as a regex string which can match on any word boundary
-                    _lookup_data.append(('\\b{}\\b'.format(prepare(row2, clean=False, magicRegex=True)), row['id'], True, order))
+                    _lookup_data.append(('\\b{}\\b'.format(prepare(row2, clean=False, magicRegex=True)), row['id'], 1, order))
 
         _lookup_data.sort(key=lambda x: x[3])
 
@@ -125,23 +128,31 @@ def coder(name, summary=False, debug=None):
 
     n = 0
     for t in name:
+        excludes = []
         t2 = prepare(t, clean=True, magicRegex=False)
         for pattern,id,mode,order in _lookup_data:
             if debug and id in debug:
                 print('{}: matching "{}"/{} against "{}"'.format(id, pattern, mode, t2))
 
-            if mode and re.search(pattern, t2):
+            if id in excludes:
+                if debug and id in debug:
+                    print('{}: excluded'.format(id))
+            elif mode == 2 and re.search(pattern, t2):
+                # all further patterns for this id will be ignored
+                excludes.append(id)
+            elif mode == 1 and re.search(pattern, t2):
                 if type(results) is w.Coder:
                     results[t] = id
                 else:
                     results.iloc[n] = id
                 break
-            elif not mode and pattern == t2:
+            elif mode == 0 and pattern == t2:
                 if type(results) is w.Coder:
                     results[t] = id
                 else:
                     results.iloc[n] = id
                 break
+
 
         n += 1
 
