@@ -8,6 +8,11 @@ import yaml
 import os
 import re
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 _lookup_data = None
 _coder_names = None
 
@@ -22,7 +27,7 @@ def coder(name, summary=False, debug=None):
 
         name:       a country name as a string, or an iterable object of name strings
 
-        summary:    just return anomalies (names that couldn't be matched or that don't match the WBG name)
+        summary:    just return anomalies (names that couldn't be matched or that don't match the WBG name).
 
         debug:      a list of ISO codes for which to print debug output
 
@@ -30,10 +35,14 @@ def coder(name, summary=False, debug=None):
         If `name` is a string then the function returns the corresponding ISO3 code, or None if the code
         can't be ascertained.
 
-        If `name` is an iterable object, the function returns a dict of country names (passed as arguments)
-        and corresponding ISO3 codes. Country names that cannot be ascertained have a value of None. Note
-        that the return object can be treated as a dict, but is actually a subclass that prints as a nicely
-        formatted table.
+        If `name` is a pandas Series, the function returns a pandas Series with the same index. Note that
+        if the summary is True then the function always returns a Coder object.
+
+        If `name` is any other iterable object, the function returns a Coder object. Coder is a dict subclass
+        with some sugar to produce a nice command line (or jupyter notebook) report. Country names that
+        cannot be coded have a value of None.
+
+        Note that if summary is True then the function ALWAYS returns a Coder object.
 
     Examples:
         print(wbgapi.economy.lookup('Eswatini')) # prints 'SWZ'
@@ -109,7 +118,12 @@ def coder(name, summary=False, debug=None):
     else:
         is_list = True
 
-    results = w.Coder({k: None for k in name})
+    if summary == False and pd is not None and type(name) is pd.core.series.Series:
+        results = pd.Series(index=name.index, dtype=object, name='iso3')
+    else:
+        results = w.Coder({k: None for k in name})
+
+    n = 0
     for t in name:
         t2 = prepare(t, clean=True, magicRegex=False)
         for pattern,id,mode,order in _lookup_data:
@@ -117,15 +131,23 @@ def coder(name, summary=False, debug=None):
                 print('{}: matching "{}"/{} against "{}"'.format(id, pattern, mode, t2))
 
             if mode and re.search(pattern, t2):
-                results[t] = id
+                if type(results) is w.Coder:
+                    results[t] = id
+                else:
+                    results.iloc[n] = id
                 break
             elif not mode and pattern == t2:
-                results[t] = id
+                if type(results) is w.Coder:
+                    results[t] = id
+                else:
+                    results.iloc[n] = id
                 break
 
-    if is_list:
-        if summary:
-            results = w.Coder(dict(filter(lambda x: x[0].lower() != _coder_names.get(x[1],'').lower() if x[1] else True, results.items())))
+        n += 1
+
+    if is_list or summary:
+        if summary and type(results) is w.Coder:
+                results = w.Coder(dict(filter(lambda x: x[0].lower() != _coder_names.get(x[1],'').lower() if x[1] else True, results.items())))
 
         return results
 
