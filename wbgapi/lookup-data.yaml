@@ -5,6 +5,9 @@
 #
 # strings beginning with ':' are treated as literal strings not patterns, and must match the 
 # target text exactly (still case-insensitive)
+
+# strings beginning with '~' are EXCLUDED patterns that cause any subsequent matches
+# for that ID to be ignored in favor of subsequent IDs. See "Hong Kong" for an example
 #
 # note that in the target string apostrophes are removed and remaining non-alpha characters
 # replaced with spaces
@@ -49,7 +52,7 @@ GBR:
 GMB:
 - Gambia
 HKG:
-- ~China.*Hong Kong
+- ~China.*Hong Kong # this likely refers to China (e.g. "China, including Hong Kong"), so all HKG patterns should fail
 - Hong Kong
 IRL:
   order: 20 # defer to 'Great Britain and Northern Ireland'
