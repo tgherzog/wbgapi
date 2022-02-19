@@ -33,6 +33,11 @@ per_page = 1000          # you can increase this if you start getting 'service u
 db = 2
 proxies = None           # see https://requests.readthedocs.io/en/master/user/advanced/#proxies for format
 
+
+retries_on_failure = 5     
+# API is prone to responding "503 Service Unavailable" at random intervals
+# This parameter specifies how often a certain request should be retried to avoid this kind of behavior until the request has ultimately failed
+
 # The maximum URL length is 1500 chars before it reports a server error. Internally we use a smaller
 # number for head room as well as to provide for the query string
 api_maxlen = 1400
@@ -519,22 +524,38 @@ def _queryAPI(url):
     '''Internal function for calling the API with sanity checks
     '''
     global proxies
+    global retries_on_failure
+    
+    attempts = 0
 
-    response = requests.get(url, proxies=proxies)
-    if response.status_code != 200:
-        raise APIError(url, response.reason, response.status_code)
+    while attempts < retries_on_failure:
+        try:
+            response = requests.get(url, proxies=proxies)
+            if response.status_code != 200:
+                raise APIError(url, response.reason, response.status_code)
 
-    try:
-        result = response.json()
-    except:
-        raise APIResponseError(url, 'JSON decoding error')
+            try:
+                result = response.json()
+            except:
+                raise APIResponseError(url, 'JSON decoding error')
 
-    hdr = _responseHeader(url, result)
-    if hdr.get('message'):
-        msg = hdr['message'][0]
-        raise APIError(url, '{}: {}'.format(msg['key'], msg['value']))
+            hdr = _responseHeader(url, result)
+            if hdr.get('message'):
+                msg = hdr['message'][0]
+                raise APIError(url, '{}: {}'.format(msg['key'], msg['value']))
 
-    return (hdr, result)
+            return (hdr, result)
+        
+        except (APIError, APIResponseError):
+            remaining_retries = retries_on_failure - attempts - 1
+            if (remaining_retries) > 0:
+                print(f'Attempt {attempts + 1} to fetch data failed. Retrying {remaining_retries} more times until skipping the data ...')
+            else:
+                print(f'The API failed to deliver data for {retries_on_failure} times.')
+            attempts +=1
+    
+    raise APIError(url, response.reason, response.status_code)
+    
 
 _concept_mrv_cache = {}
 
