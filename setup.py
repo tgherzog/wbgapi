@@ -11,7 +11,7 @@ setuptools.setup(
     name="wbgapi",
     version=pkgVersion,
     author="Tim Herzog",
-    # author_email="author@example.com",
+    author_email="tgherzog100@yahoo.com",
     description="wbgapi provides a comprehensive interface to the World Bank's data and metadata APIs",
     license='MIT',
     long_description=long_description,
