@@ -324,7 +324,7 @@ def DataFrame(series, economy='all', time='all', index=None, columns=None, mrv=N
 
     # for now let's see if it works to build the dataframe dynamically
     df = frame(index)
-    dummy = pd.Series()    # empty series - never assigned actual values
+    dummy = pd.Series(dtype='float64')    # empty series - never assigned actual values
     ts_suffix = ':T'
     concepts = w.source.concepts(db)
     if labels:
