@@ -265,20 +265,28 @@ container so that you can customize the CSS if you so desire (for instance, I li
 The location of your custom.css varies depending on your environment. Note that this does not apply
 to DataFrame objects, which are formatted by pandas.
 
-## Proxy servers ##
+## Proxy Servers and Other HTTP Options ##
 
-`wbgapi.proxies` can be configured to support proxy servers. This variable is passed
-[directly to the requests module](https://requests.readthedocs.io/en/master/user/advanced/#proxies).
+WBGAPI uses [requests][requests] for all HTTP/HTTPS calls. As of version 1.0.9
+you can use the `get_options` module variable to pass any additional parameters you like to
+`requests.get` for instance, to specify a
+[proxy server](https://requests.readthedocs.io/en/master/user/advanced/#proxies) or
+[disable SSL verification](https://requests.readthedocs.io/en/master/user/advanced/#ssl-cert-verification).
+For example:
 
-    wb.proxies = {
+   wb.get_options['proxies'] = {
       'http': 'http://10.10.1.10:3128',
       'https': 'http://10.10.1.10:1080',
-    }
+   }
+
+Using the `wb.proxies` variable is still supported on a deprecated basis and will raise a DeprecationWarning
+exception (which python ignores by default).
 
 ## Caching ##
 
-WBGAPI has no built-in caching. However, it makes all its requests through [requests][requests], which
-can be cached via [requests cache][req-cache]
+WBGAPI has no built-in caching, but you can implement it yourself using
+[requests cache][req-cache].
+
 
 [beta-endpoints]: https://datahelpdesk.worldbank.org/knowledgebase/articles/1886686-advanced-data-api-queries
 [pandas]: https://pandas.pydata.org

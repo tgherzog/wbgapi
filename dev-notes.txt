@@ -27,7 +27,7 @@ databid:                     - with /v2/en/sources, this will include the intern
 
 1. Update setup.py if necessary
 
-2. Update wbgapi/__version__.py
+2. Update wbgapi/__version__.py and README.md
 
 3. Commit changes
 
