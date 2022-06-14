@@ -274,10 +274,10 @@ you can use the `get_options` module variable to pass any additional parameters 
 [disable SSL verification](https://requests.readthedocs.io/en/master/user/advanced/#ssl-cert-verification).
 For example:
 
-   wb.get_options['proxies'] = {
-      'http': 'http://10.10.1.10:3128',
-      'https': 'http://10.10.1.10:1080',
-   }
+    wb.get_options['proxies'] = {
+       'http': 'http://10.10.1.10:3128',
+       'https': 'http://10.10.1.10:1080',
+    }
 
 Using the `wb.proxies` variable is still supported on a deprecated basis and will raise a DeprecationWarning
 exception (which python ignores by default).
