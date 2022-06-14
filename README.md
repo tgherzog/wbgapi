@@ -267,7 +267,7 @@ to DataFrame objects, which are formatted by pandas.
 
 ## Proxy Servers and Other HTTP Options ##
 
-WBGAPI uses [requests][requests] for all HTTP/HTTPS calls. As of version 1.0.9
+WBGAPI uses [requests][requests] for all HTTP/HTTPS calls. As of version 1.0.10
 you can use the `get_options` module variable to pass any additional parameters you like to
 `requests.get` for instance, to specify a
 [proxy server](https://requests.readthedocs.io/en/master/user/advanced/#proxies) or
