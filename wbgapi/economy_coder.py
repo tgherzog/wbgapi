@@ -66,7 +66,7 @@ def coder(name, summary=False, debug=None):
 
             s = re.sub(r'\s*\(.*\)', '', s)         # remove parenthetical text
             s = s.replace("'", '')                  # remove apostrophes
-            s = re.sub(r'[^a-z0-9&]', ' ', s)       # convert remaining superflous chars to spaces
+            s = re.sub(r'[^\w&]', ' ', s)           # convert remaining superflous chars to spaces
 
         s = s.strip()
 
@@ -132,7 +132,7 @@ def coder(name, summary=False, debug=None):
         t2 = prepare(t, clean=True, magicRegex=False)
         for pattern,id,mode,order in _lookup_data:
             if debug and id in debug:
-                print('{}: matching "{}"/{} against "{}"'.format(id, pattern, mode, t2))
+                print('{}: matching "{}"/{} against "{} > {}"'.format(id, pattern, mode, t, t2))
 
             if id in excludes:
                 if debug and id in debug:
