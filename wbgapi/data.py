@@ -336,7 +336,6 @@ def DataFrame(series, economy='all', time='all', index=None, columns=None, mrv=N
             df2[concepts[label_head]['value']] = None
             df2[concepts[label_head]['value']] = df2[concepts[label_head]['value']].astype(str)
 
-
     for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params, db=db, **dimensions):
         column_key = row[columns]['id']
         if len(index) == 1:
