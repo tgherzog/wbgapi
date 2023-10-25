@@ -331,6 +331,12 @@ def DataFrame(series, economy='all', time='all', index=None, columns=None, mrv=N
         # create a separate dataframe for labels so that we can control the column position below
         df2 = frame(index)
 
+        # set the column type to string to avoid the FutureWarning of pandas
+        for label_head in index:
+            df2[concepts[label_head]['value']] = None
+            df2[concepts[label_head]['value']] = df2[concepts[label_head]['value']].astype(str)
+
+
     for row in fetch(series, economy, time, mrv=mrv, mrnev=mrnev, skipBlanks=skipBlanks, labels=True, skipAggs=skipAggs, numericTimeKeys=numericTimeKeys, params=params, db=db, **dimensions):
         column_key = row[columns]['id']
         if len(index) == 1:
