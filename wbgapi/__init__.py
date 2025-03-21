@@ -636,7 +636,7 @@ def abbreviate(text, q=None, padding=80):
     match = None
     if q and padding is not None:
         if padding > 0:
-            pattern = '(?<!\w).{{0,{len}}}{term}.{{0,{len}}}(?!\w)'.format(term=re.escape(q), len=padding)
+            pattern = r'(?<!\w).{{0,{len}}}{term}.{{0,{len}}}(?!\w)'.format(term=re.escape(q), len=padding)
             match = re.search(pattern, text, re.IGNORECASE)
         else:
             match = re.search(q, text, re.IGNORECASE)
